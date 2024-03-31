@@ -69,7 +69,7 @@ class WeiboCode:
             else:
                 logger.info(f'{key}超话未存在活动签到')
         if not ticket_id:
-            return None
+            return f"{key}无兑换码"
         return ticket_id
 
     async def get_code(self, id: str):
@@ -92,8 +92,8 @@ class WeiboCode:
         return result['code'] if result['success'] else responses['msg']
 
     async def get_code_list(self):
-        ticket_id = await self.get_ticket_id
-        if not ticket_id:
+        ticket_id = await self.get_ticket_id   #有活动则返回一个dict，没活动则返回一个str
+        if isinstance(ticket_id,dict):
             msg = ""
             code = {key: [] for key in ticket_id.keys()}
             for key, value in ticket_id.items():
@@ -109,4 +109,5 @@ class WeiboCode:
                     f"  \n{values[2]}"
             return msg
         else: 
-            return None
+            msg = ticket_id
+            return msg
