@@ -3,7 +3,7 @@ from urllib.parse import unquote
 
 import httpx
 
-from ..model import UserAccount
+from ..model import UserData
 from ..utils import logger
 
 
@@ -39,7 +39,7 @@ def _nested_lookup(obj, key, with_keys=False):
 
 
 class WeiboCode:
-    def __init__(self, account: UserAccount):
+    def __init__(self, account: UserData):
         self.params = cookie_to_dict(account.weibo_params.replace('&', ';')) if account.weibo_params else None
         """params: s=xxxxxx; gsid=xxxxxx; aid=xxxxxx; from=xxxxxx"""
         self.cookie = cookie_to_dict(account.weibo_cookie)
