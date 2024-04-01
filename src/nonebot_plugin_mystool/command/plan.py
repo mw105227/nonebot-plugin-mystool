@@ -28,7 +28,7 @@ from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, Genera
     get_unique_users, get_validate, read_admin_list
 
 __all__ = [
-    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", "manually_starrail_note_check"
+    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", "manually_starrail_note_check","manually_weibo_check"
 ]
 
 manually_game_sign = on_command(plugin_config.preference.command_start + '签到', priority=5, block=True)
@@ -191,8 +191,6 @@ CommandRegistry.set_usage(
         description="手动查看星穹铁道实时便笺，即开拓力、每日实训、每周模拟宇宙积分等信息"
     )
 )
-
-weibo_check = on_command(plugin_config.preference.command_start + '微博兑换码', priority=5, block=True)
 
 
 @manually_starrail_note_check.handle()
@@ -657,18 +655,23 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     :param user: 用户对象
     :param user_ids: 发送通知的所有用户ID
     """
-    for account in user.accounts.values():
-        if account.enable_weibo:
-            # account = UserAccount(account) 
-            weibo = WeiboCode(account)
-            msg = await weibo.get_code_list()
-            if matcher:
-                await matcher.send(msg)
-            else:
-                if not msg:
-                    for user_id in user_ids:
-                        await send_private_msg(user_id=user_id, message=msg)
-                break
+    if user.enable_weibo:
+        # account = UserAccount(account) 
+        weibo = WeiboCode(user)
+        msg = await weibo.get_code_list()
+        if matcher:
+            await matcher.send(msg)
+        else:
+            if not msg:
+                for user_id in user_ids:
+                    await send_private_msg(user_id=user_id, message=msg)
+    else:
+        msg = "未开启微博功能"
+        if matcher:
+            await matcher.send(msg)
+        else:
+            for user_id in user_ids:
+                await send_private_msg(user_id=user_id, message=msg)
 
 @scheduler.scheduled_job("cron", hour='0', minute='0', id="daily_goodImg_update")
 def daily_update():
@@ -725,7 +728,9 @@ async def auto_weibo_check():
     logger.info(f"{plugin_config.preference.log_head}微博自动任务执行完成")
 
 
-@weibo_check.handle()
+manually_weibo_check = on_command(plugin_config.preference.command_start + 'wb兑换', priority=5, block=True)
+
+@manually_weibo_check.handle()
 async def weibo_schedule(event: Union[GeneralMessageEvent], matcher: Matcher):
     if isinstance(event, GeneralGroupMessageEvent):
         await matcher.send("⚠️为了保护您的隐私，请私聊进行查询。")
