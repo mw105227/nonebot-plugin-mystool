@@ -233,7 +233,7 @@ def generate_ds(data: Union[str, dict, list, None] = None, params: Union[str, di
         return f"{t},{r},{c}"
 
 
-async def get_validate(gt: str = None, challenge: str = None, retry: bool = True):
+async def get_validate(user: UserData, gt: str = None, challenge: str = None, retry: bool = True):
     """
     使用打码平台获取人机验证validate
 
@@ -242,10 +242,18 @@ async def get_validate(gt: str = None, challenge: str = None, retry: bool = True
     :param retry: 是否允许重试
     :return: 如果配置了平台URL，且 gt, challenge 不为空，返回 GeetestResult
     """
-    if not (gt and challenge) or not plugin_config.preference.geetest_url:
-        return GeetestResult("", "")
-    params = {"gt": gt, "challenge": challenge}
-    params.update(plugin_config.preference.geetest_params)
+    if not plugin_config.preference.global_geetest:
+        if not (gt and challenge) or not user.geetest_url:
+            return GeetestResult("", "")
+        geetest_url = user.geetest_url
+        params = {"gt": gt, "challenge": challenge}
+        params.update(user.geetest_params)
+    else:
+        if not (gt and challenge) or not plugin_config.preference.geetest_url:
+            return GeetestResult("", "")
+        geetest_url = plugin_config.preference.geetest_url
+        params = {"gt": gt, "challenge": challenge}
+        params.update(plugin_config.preference.geetest_params)
     content = deepcopy(plugin_config.preference.geetest_json or Preference().geetest_json)
     for key, value in content.items():
         if isinstance(value, str):
@@ -255,7 +263,7 @@ async def get_validate(gt: str = None, challenge: str = None, retry: bool = True
             with attempt:
                 async with httpx.AsyncClient() as client:
                     res = await client.post(
-                        plugin_config.preference.geetest_url,
+                        geetest_url,
                         params=params,
                         json=content,
                         timeout=60
@@ -265,7 +273,7 @@ async def get_validate(gt: str = None, challenge: str = None, retry: bool = True
                 seccode = geetest_data['data'].get('seccode') or f"{validate}|jordan"
                 logger.debug(f"{plugin_config.preference.log_head}人机验证结果：{geetest_data}")
                 return GeetestResult(validate=validate, seccode=seccode)
-    except tenacity.RetryError:
+    except tenacity.RetryError as e:
         logger.exception(f"{plugin_config.preference.log_head}获取人机验证validate失败")
 
 

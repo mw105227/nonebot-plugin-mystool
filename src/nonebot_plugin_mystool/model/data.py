@@ -373,6 +373,10 @@ class UserData(BaseModelWithSetter):
     '''微博查询活动签到用的 cookie'''
     weibo_params: str = ""
     '''微博查询活动签到用的 params'''
+    geetest_url: Optional[str]
+    '''极验Geetest人机验证打码接口URL'''
+    geetest_params: Optional[Dict[str, Any]] = None
+    '''极验Geetest人机验证打码API发送的参数（除gt，challenge外）'''
     uuid: Optional[str] = None
     """用户UUID密钥，用于不同NoneBot适配器平台之间的数据同步，因此不可泄露"""
     qq_guild: Optional[Dict[str, int]] = {}
