@@ -28,7 +28,8 @@ from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, Genera
     get_unique_users, get_validate, read_admin_list
 
 __all__ = [
-    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", "manually_starrail_note_check","manually_weibo_check"
+    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", \
+    "manually_starrail_note_check","manually_weibo_check"
 ]
 
 manually_game_sign = on_command(plugin_config.preference.command_start + '签到', priority=5, block=True)
@@ -261,10 +262,10 @@ async def perform_game_sign(
             if (get_info_status and not info.is_sign) or not get_info_status:
                 sign_status, mmt_data = await signer.sign(account.platform)
                 if sign_status.need_verify:
-                    if plugin_config.preference.geetest_url:
+                    if plugin_config.preference.geetest_url or user.geetest_url:
                         if matcher:
                             await matcher.send("⏳正在尝试完成人机验证，请稍后...")
-                        geetest_result = await get_validate(mmt_data.gt, mmt_data.challenge)
+                        geetest_result = await get_validate(user, mmt_data.gt, mmt_data.challenge)
                         sign_status, _ = await signer.sign(account.platform, mmt_data, geetest_result)
 
                 if not sign_status and (user.enable_notice or matcher):
@@ -409,7 +410,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
                 sign_points: Optional[int] = None
                 for key_name in missions_state.state_dict:
                     if key_name == BaseMission.SIGN:
-                        sign_status, sign_points = await mission_obj.sign()
+                        sign_status, sign_points = await mission_obj.sign(user)
                     elif key_name == BaseMission.VIEW:
                         read_status = await mission_obj.read()
                     elif key_name == BaseMission.LIKE:
@@ -658,20 +659,26 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     if user.enable_weibo:
         # account = UserAccount(account) 
         weibo = WeiboCode(user)
-        msg = await weibo.get_code_list()
+        result = await weibo.get_code_list()
+        try:
+            if isinstance(result, tuple):
+                msg, img = result
+        except Exception as e:
+            messages = e
         if matcher:
-            await matcher.send(msg)
+            onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
+            messages = msg + onebot_img_msg
+            await matcher.send(messages)
         else:
             if not msg:
                 for user_id in user_ids:
-                    await send_private_msg(user_id=user_id, message=msg)
+                    saa_img = Image(await get_file(img))
+                    messages = msg + saa_img
+                    await send_private_msg(user_id=user_id, message=messages)
     else:
-        msg = "未开启微博功能"
+        message = "未开启微博功能"
         if matcher:
-            await matcher.send(msg)
-        else:
-            for user_id in user_ids:
-                await send_private_msg(user_id=user_id, message=msg)
+            await matcher.send(message)
 
 @scheduler.scheduled_job("cron", hour='0', minute='0', id="daily_goodImg_update")
 def daily_update():

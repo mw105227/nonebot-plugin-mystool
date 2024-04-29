@@ -7,7 +7,7 @@ import tenacity
 from ..api.common import ApiResultHandler, is_incorrect_return, create_verification, \
     verify_verification
 from ..model import BaseApiStatus, MissionStatus, MissionData, \
-    MissionState, UserAccount, plugin_config, plugin_env
+    MissionState, UserAccount, plugin_config, plugin_env, UserData
 from ..utils import logger, generate_ds, \
     get_async_retry, get_validate
 
@@ -109,7 +109,7 @@ class BaseMission:
         self.headers = HEADERS_BASE.copy()
         self.headers["x-rpc-device_id"] = account.device_id_android
 
-    async def sign(self, retry: bool = True) -> Tuple[MissionStatus, Optional[int]]:
+    async def sign(self, user: UserData, retry: bool = True) -> Tuple[MissionStatus, Optional[int]]:
         """
         签到
 
@@ -146,10 +146,10 @@ class BaseMission:
                         logger.error(
                             f"米游币任务 - 讨论区签到: 用户 {self.account.display_name} 需要完成人机验证")
                         logger.debug(f"网络请求返回: {res.text}")
-                        if plugin_config.preference.geetest_url:
+                        if plugin_config.preference.geetest_url or user.geetest_url:
                             create_status, mmt_data = await create_verification(self.account)
                             if create_status:
-                                if geetest_result := await get_validate(mmt_data.gt, mmt_data.challenge):
+                                if geetest_result := await get_validate(user, mmt_data.gt, mmt_data.challenge):
                                     if await verify_verification(mmt_data, geetest_result, self.account):
                                         logger.success(
                                             f"米游币任务 - 讨论区签到: 用户 {self.account.display_name} 人机验证通过")
