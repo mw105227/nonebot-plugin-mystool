@@ -663,17 +663,22 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
         try:
             if isinstance(result, tuple):
                 msg, img = result
+            else:
+                msg = result
         except Exception as e:
             messages = e
         if matcher:
-            onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
-            messages = msg + onebot_img_msg
+            if img:
+                onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
+                messages = msg + onebot_img_msg
+            else:
+                messages = msg
             await matcher.send(messages)
         else:
-            if not msg:
+            if img and '无' not in msg:
+                saa_img = Image(await get_file(img))
+                messages = msg + saa_img
                 for user_id in user_ids:
-                    saa_img = Image(await get_file(img))
-                    messages = msg + saa_img
                     await send_private_msg(user_id=user_id, message=messages)
     else:
         message = "未开启微博功能"
