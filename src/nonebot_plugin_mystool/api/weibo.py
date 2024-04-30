@@ -67,7 +67,7 @@ class WeiboCode:
                 ticket_id[key]['id'] = [i
                                   for id in group
                                   for i in re.findall(r'ticket_id=(\d*)', unquote(unquote(id['scheme'])))]
-                ticket_id[key]['img'] = group[random.randint(0,len(group))]['pic']
+                ticket_id[key]['img'] = group[random.randint(0, len(group) - 1)]['pic']
             else:
                 logger.info(f'{key}超话当前没有兑换码')
         if not ticket_id:
