@@ -74,19 +74,23 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
             qrcode_query_times = round(
                 plugin_config.preference.qrcode_wait_time / plugin_config.preference.qrcode_query_interval
             )
+            bbs_uid, game_token = None, None
             for _ in range(qrcode_query_times):
-                login_status, (bbs_uid, game_token) = await query_game_token_qrcode(
+                login_status, query_qrcode_ret = await query_game_token_qrcode(
                     qrcode_ticket,
                     device_id,
                     plugin_config.preference.game_token_app_id
                 )
-                if login_status.qrcode_init or login_status.qrcode_scanned:
+                if query_qrcode_ret:
+                    bbs_uid, game_token = query_qrcode_ret
+                    break
+                elif login_status.qrcode_expired:
+                    get_cookie.finish("⚠️二维码已过期，登录失败")
+                elif not login_status:
                     await asyncio.sleep(plugin_config.preference.qrcode_query_interval)
                     continue
-                elif login_status.qrcode_expired:
-                    get_cookie.reject("⚠️二维码已过期，登录失败")
-                elif not login_status:
-                    break
+
+            if bbs_uid and game_token:
                 cookies = BBSCookies()
                 cookies.bbs_uid = bbs_uid
                 account = PluginDataManager.plugin_data.users[user_id].accounts.get(bbs_uid)
@@ -143,8 +147,8 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                                     logger.success(
                                         f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
                                     await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
-
-                break
+            else:
+                get_cookie.finish("⚠️获取二维码扫描状态超时，请尝试重新登录")
 
         if not login_status:
             notice_text = "⚠️登录失败："
