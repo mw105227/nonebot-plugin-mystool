@@ -1705,7 +1705,7 @@ async def fetch_game_token_qrcode(
                 }
                 async with httpx.AsyncClient() as client:
                     res = await client.post(
-                        URL_VERIFY_VERIFICATION,
+                        URL_FETCH_GAME_TOKEN_QRCODE,
                         json=content,
                         timeout=plugin_config.preference.timeout
                     )
