@@ -341,9 +341,9 @@ class ApiResultHandler(BaseModel):
         self.data = self.content.get("data")
 
         for key in ["retcode", "status"]:
-            if not self.retcode:
+            if self.retcode is None:
                 self.retcode = self.content.get(key)
-                if not self.retcode:
+                if self.retcode is None:
                     self.retcode = self.data.get(key) if self.data else None
 
         self.message: Optional[str] = None
@@ -1715,6 +1715,7 @@ async def fetch_game_token_qrcode(
                     url = urlparse(qrcode_url)
                     return BaseApiStatus(success=True), (qrcode_url, parse_qs(url.query)["token"][0])
                 else:
+                    logger.debug(f"网络请求返回: {res.text}")
                     return BaseApiStatus(), None
     except tenacity.RetryError as e:
         if is_incorrect_return(e):
