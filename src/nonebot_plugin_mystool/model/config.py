@@ -257,7 +257,6 @@ else:
     else:
         logger.info(f"插件配置文件 {plugin_config_path} 不存在，已创建默认插件配置文件。")
 
-
 # TODO: 可能产生 #271 的问题 https://github.com/Ljzd-PRO/nonebot-plugin-mystool/issues/271
 # @_driver.on_startup
 # def _():

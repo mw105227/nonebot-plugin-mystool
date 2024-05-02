@@ -29,7 +29,7 @@ from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, Genera
 
 __all__ = [
     "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", \
-    "manually_starrail_note_check","manually_weibo_check"
+    "manually_starrail_note_check", "manually_weibo_check"
 ]
 
 manually_game_sign = on_command(plugin_config.preference.command_start + '签到', priority=5, block=True)
@@ -685,6 +685,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
         if matcher:
             await matcher.send(message)
 
+
 @scheduler.scheduled_job("cron", hour='0', minute='0', id="daily_goodImg_update")
 def daily_update():
     """
@@ -741,6 +742,7 @@ async def auto_weibo_check():
 
 
 manually_weibo_check = on_command(plugin_config.preference.command_start + 'wb兑换', priority=5, block=True)
+
 
 @manually_weibo_check.handle()
 async def weibo_schedule(event: Union[GeneralMessageEvent], matcher: Matcher):
