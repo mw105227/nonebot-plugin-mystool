@@ -135,16 +135,16 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                                 account.cookies.update(cookies)
                                 PluginDataManager.write_plugin_data()
 
-                                # 6. 通过 stoken_v2 获取 cookie_token
-                                login_status, cookies = await get_cookie_token_by_stoken(account.cookies, device_id)
-                                if login_status:
-                                    logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
-                                    account.cookies.update(cookies)
-                                    PluginDataManager.write_plugin_data()
+                            # 6. 通过 stoken_v2 获取 cookie_token
+                            login_status, cookies = await get_cookie_token_by_stoken(account.cookies, device_id)
+                            if login_status:
+                                logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
+                                account.cookies.update(cookies)
+                                PluginDataManager.write_plugin_data()
 
-                                    logger.success(
-                                        f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
-                                    await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
+                                logger.success(
+                                    f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
+                                await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
             else:
                 get_cookie.finish("⚠️获取二维码扫描状态超时，请尝试重新登录")
 
