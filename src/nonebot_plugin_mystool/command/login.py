@@ -127,6 +127,7 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                             account.cookies.update(cookies)
                             PluginDataManager.write_plugin_data()
 
+                        if account.cookies.stoken_v2:
                             # 5. 通过 stoken_v2 获取 ltoken
                             login_status, cookies = await get_ltoken_by_stoken(account.cookies, device_id)
                             if login_status:
