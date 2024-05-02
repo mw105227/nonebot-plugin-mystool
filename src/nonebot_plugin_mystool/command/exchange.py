@@ -169,7 +169,8 @@ async def _(
             'bh2': (await get_good_list('bh2'))[1],
             'xq': (await get_good_list('hkrpg'))[1],
             'wd': (await get_good_list('nxx'))[1],
-            'bbs': (await get_good_list('bbs'))[1]
+            'bbs': (await get_good_list('bbs'))[1],
+            'nap': (await get_good_list('nap'))[1]
         }
         flag = True
         break_flag = False
