@@ -114,11 +114,7 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
 
                 if login_status:
                     # 3. 通过 GameToken 获取 stoken
-                    login_status, stoken = await get_token_by_game_token(
-                        bbs_uid,
-                        game_token,
-                        plugin_config.preference.game_token_app_id
-                    )
+                    login_status, stoken = await get_token_by_game_token(bbs_uid, game_token)
                     if login_status:
                         logger.success(f"用户 {bbs_uid} 成功获取 stoken: {stoken}")
                         account.cookies.stoken = stoken

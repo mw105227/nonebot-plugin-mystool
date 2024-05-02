@@ -1788,7 +1788,6 @@ async def query_game_token_qrcode(
 async def get_token_by_game_token(
         bbs_uid: str,
         game_token: str,
-        app_id: str = "1",
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[str]]:
     """
@@ -1796,7 +1795,6 @@ async def get_token_by_game_token(
 
     :param bbs_uid: 米游社账号 UID
     :param game_token: 有效的 GameToken
-    :param app_id: 登录的应用标识符
     :param retry: 是否允许重试
     :return: SToken
     """
@@ -1804,13 +1802,13 @@ async def get_token_by_game_token(
         async for attempt in get_async_retry(retry):
             with attempt:
                 content = {
-                    "account_id": bbs_uid,
+                    "account_id": int(bbs_uid),
                     "game_token": game_token
                 }
                 async with httpx.AsyncClient() as client:
                     res = await client.post(
                         URL_GET_TOKEN_BY_GAME_TOKEN,
-                        headers={"x-rpc-app_id": app_id},
+                        headers={"x-rpc-app_id": "bll8iq97cem8"},
                         json=content,
                         timeout=plugin_config.preference.timeout
                     )
