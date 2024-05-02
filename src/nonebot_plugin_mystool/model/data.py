@@ -276,7 +276,7 @@ class UserAccount(BaseModelWithSetter):
         显示名称
         """
         from ..utils.common import blur_phone
-        return f"{self.bbs_uid}({blur_phone(self.phone_number)})"
+        return f"{self.bbs_uid}({blur_phone(self.phone_number)})" if self.phone_number else self.bbs_uid
 
 
 class ExchangePlan(BaseModel):
