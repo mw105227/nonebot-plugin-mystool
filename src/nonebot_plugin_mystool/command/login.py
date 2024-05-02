@@ -83,6 +83,7 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                 )
                 if query_qrcode_ret:
                     bbs_uid, game_token = query_qrcode_ret
+                    logger.success(f"用户 {bbs_uid} 成功获取 game_token: {game_token}")
                     break
                 elif login_status.qrcode_expired:
                     get_cookie.finish("⚠️二维码已过期，登录失败")

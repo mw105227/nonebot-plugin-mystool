@@ -1818,6 +1818,7 @@ async def get_token_by_game_token(
                 if api_result.retcode == 0:
                     return BaseApiStatus(success=True), api_result.data["token"]["token"]
                 else:
+                    logger.debug(f"网络请求返回: {res.text}")
                     return BaseApiStatus(), None
     except tenacity.RetryError as e:
         if is_incorrect_return(e):
