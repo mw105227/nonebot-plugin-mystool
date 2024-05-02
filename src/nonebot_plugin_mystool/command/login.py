@@ -55,7 +55,10 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
 
         # 1. 获取 GameToken 登录二维码
         device_id = generate_device_id()
-        login_status, fetch_qrcode_ret = await fetch_game_token_qrcode(device_id)
+        login_status, fetch_qrcode_ret = await fetch_game_token_qrcode(
+            device_id,
+            plugin_config.preference.game_token_app_id
+        )
         if fetch_qrcode_ret:
             qrcode_url, qrcode_ticket = fetch_qrcode_ret
             await get_cookie.send("请用米游社App扫描下面的二维码进行登录")
@@ -68,9 +71,15 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                     await get_cookie.finish("⚠️发送二维码失败，无法登录")
 
             # 2. 从二维码登录获取 GameToken
-            qrcode_query_times = plugin_config.preference.qrcode_wait_time / plugin_config.preference.qrcode_query_interval
+            qrcode_query_times = round(
+                plugin_config.preference.qrcode_wait_time / plugin_config.preference.qrcode_query_interval
+            )
             for _ in range(qrcode_query_times):
-                login_status, (bbs_uid, game_token) = await query_game_token_qrcode(qrcode_ticket, device_id)
+                login_status, (bbs_uid, game_token) = await query_game_token_qrcode(
+                    qrcode_ticket,
+                    device_id,
+                    plugin_config.preference.game_token_app_id
+                )
                 if login_status.qrcode_init or login_status.qrcode_scanned:
                     await asyncio.sleep(plugin_config.preference.qrcode_query_interval)
                     continue
@@ -100,7 +109,11 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
 
                 if login_status:
                     # 3. 通过 GameToken 获取 stoken
-                    login_status, stoken = await get_token_by_game_token(bbs_uid, game_token)
+                    login_status, stoken = await get_token_by_game_token(
+                        bbs_uid,
+                        game_token,
+                        plugin_config.preference.game_token_app_id
+                    )
                     if login_status:
                         logger.success(f"用户 {bbs_uid} 成功获取 stoken: {stoken}")
                         account.cookies.stoken = stoken

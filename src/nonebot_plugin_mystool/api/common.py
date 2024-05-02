@@ -1687,12 +1687,14 @@ async def verify_verification(
 
 async def fetch_game_token_qrcode(
         device_id: str,
+        app_id: str = "1",
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[Tuple[str, str]]]:
     """
     获取米游社扫码登录（GameToken）二维码
 
     :param device_id: 设备ID
+    :param app_id: 登录的应用标识符
     :param retry: 是否允许重试
     :return 其中 ``Tuple[str, str]`` 为二维码URL和用于查询二维码扫描状态的 ``token``
     """
@@ -1700,7 +1702,7 @@ async def fetch_game_token_qrcode(
         async for attempt in get_async_retry(retry):
             with attempt:
                 content = {
-                    "app_id": "1",
+                    "app_id": app_id,
                     "device": device_id,
                 }
                 async with httpx.AsyncClient() as client:
@@ -1730,6 +1732,7 @@ async def fetch_game_token_qrcode(
 async def query_game_token_qrcode(
         ticket: str,
         device_id: str,
+        app_id: str = "1",
         retry: bool = True
 ) -> Tuple[QueryGameTokenQrCodeStatus, Optional[Tuple[str, str]]]:
     """
@@ -1737,6 +1740,7 @@ async def query_game_token_qrcode(
 
     :param ticket: 生成二维码时返回的 URL 参数中 ``ticket`` 字段的值
     :param device_id: 设备ID
+    :param app_id: 登录的应用标识符
     :param retry: 是否允许重试
     :return 其中 ``Tuple[str, str]`` 为米游社账号ID和 GameToken
     """
@@ -1744,7 +1748,7 @@ async def query_game_token_qrcode(
         async for attempt in get_async_retry(retry):
             with attempt:
                 content = {
-                    "app_id": 1,
+                    "app_id": app_id,
                     "device": device_id,
                     "ticket": ticket
                 }
@@ -1784,6 +1788,7 @@ async def query_game_token_qrcode(
 async def get_token_by_game_token(
         bbs_uid: str,
         game_token: str,
+        app_id: str = "1",
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[str]]:
     """
@@ -1791,6 +1796,7 @@ async def get_token_by_game_token(
 
     :param bbs_uid: 米游社账号 UID
     :param game_token: 有效的 GameToken
+    :param app_id: 登录的应用标识符
     :param retry: 是否允许重试
     :return: SToken
     """
@@ -1804,7 +1810,7 @@ async def get_token_by_game_token(
                 async with httpx.AsyncClient() as client:
                     res = await client.post(
                         URL_GET_TOKEN_BY_GAME_TOKEN,
-                        headers={"x-rpc-app_id": "1"},
+                        headers={"x-rpc-app_id": app_id},
                         json=content,
                         timeout=plugin_config.preference.timeout
                     )
