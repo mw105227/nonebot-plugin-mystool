@@ -1,6 +1,7 @@
+import json
 import time
 from typing import List, Optional, Tuple, Dict, Any, Union, Type
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse, parse_qs
 
 import httpx
 import tenacity
@@ -11,7 +12,7 @@ from ..model import GameRecord, GameInfo, Good, Address, BaseApiStatus, MmtData,
     GetCookieStatus, \
     CreateMobileCaptchaStatus, GetGoodDetailStatus, ExchangeStatus, GeetestResultV4, GenshinNote, GenshinNoteStatus, \
     GetFpStatus, StarRailNoteStatus, StarRailNote, UserAccount, BBSCookies, ExchangePlan, ExchangeResult, plugin_env, \
-    plugin_config
+    plugin_config, QueryGameTokenQrCodeStatus
 from ..utils import generate_device_id, logger, generate_ds, \
     get_async_retry, generate_seed_id, generate_fp_locally
 
@@ -47,6 +48,8 @@ URL_STARRAIL_NOTE_BBS = "https://api-takumi-record.mihoyo.com/game_record/app/hk
 URL_STARRAIL_NOTE_WIDGET = "https://api-takumi-record.mihoyo.com/game_record/app/hkrpg/aapi/widget"
 URL_CREATE_VERIFICATION = "https://bbs-api.miyoushe.com/misc/api/createVerification?is_high=true"
 URL_VERIFY_VERIFICATION = "https://bbs-api.miyoushe.com/misc/api/verifyVerification"
+URL_FETCH_GAME_TOKEN_QRCODE = "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/fetch"
+URL_QUERY_GAME_TOKEN_QRCODE = "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/query"
 
 HEADERS_WEBAPI = {
     "Host": "webapi.account.mihoyo.com",
@@ -1679,3 +1682,100 @@ async def verify_verification(
         else:
             logger.exception("验证人机验证结果(verify_verification) - 请求失败")
             return BaseApiStatus(network_error=True)
+
+
+async def fetch_game_token_qrcode(
+        account: UserAccount = None,
+        retry: bool = True
+) -> Tuple[BaseApiStatus, Optional[Tuple[str, str]]]:
+    """
+    获取米游社扫码登录（GameToken）二维码
+
+    :param account: 用户账户数据
+    :param retry: 是否允许重试
+    :return 其中 ``Tuple[str, str]`` 为二维码URL和用于查询二维码扫描状态的 ``token``
+    """
+    device_id = account.device_id_ios if account else generate_device_id()
+    try:
+        async for attempt in get_async_retry(retry):
+            with attempt:
+                content = {
+                    "app_id": 1,
+                    "device": device_id,
+                }
+                async with httpx.AsyncClient() as client:
+                    res = await client.post(
+                        URL_VERIFY_VERIFICATION,
+                        json=content,
+                        timeout=plugin_config.preference.timeout
+                    )
+                api_result = ApiResultHandler(res.json())
+                if api_result.retcode == 0:
+                    qrcode_url = api_result.data["url"]
+                    url = urlparse(qrcode_url)
+                    return BaseApiStatus(success=True), (qrcode_url, parse_qs(url.query)["token"][0])
+                else:
+                    return BaseApiStatus(), None
+    except tenacity.RetryError as e:
+        if is_incorrect_return(e):
+            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 服务器没有正确返回")
+            logger.debug(f"网络请求返回: {res.text}")
+            return BaseApiStatus(incorrect_return=True), None
+        else:
+            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 请求失败")
+            return BaseApiStatus(network_error=True), None
+
+
+async def query_game_token_qrcode(
+        ticket: str,
+        account: UserAccount = None,
+        retry: bool = True
+) -> Tuple[QueryGameTokenQrCodeStatus, Optional[Tuple[str, str]]]:
+    """
+    查询米游社扫码登录（GameToken）二维码扫描状态
+
+    :param ticket: 生成二维码时返回的 URL 参数中 ``ticket`` 字段的值
+    :param account: 用户账户数据
+    :param retry: 是否允许重试
+    :return 其中 ``Tuple[str, str]`` 为米游社账号ID和Game Token
+    """
+    device_id = account.device_id_ios if account else generate_device_id()
+    try:
+        async for attempt in get_async_retry(retry):
+            with attempt:
+                content = {
+                    "app_id": 1,
+                    "device": device_id,
+                    "ticket": ticket
+                }
+                async with httpx.AsyncClient() as client:
+                    res = await client.post(
+                        URL_QUERY_GAME_TOKEN_QRCODE,
+                        json=content,
+                        timeout=plugin_config.preference.timeout
+                    )
+                api_result = ApiResultHandler(res.json())
+                if api_result.retcode == 0:
+                    if api_result.data["stat"] == "Init":
+                        return QueryGameTokenQrCodeStatus(qrcode_init=True), None
+                    elif api_result.data["stat"] == "Scanned":
+                        return QueryGameTokenQrCodeStatus(qrcode_scanned=True), None
+                    else:
+                        payload_raw = api_result.data["payload"]["raw"]
+                        parsed_payload: Dict[str, str] = json.loads(payload_raw)
+                        return QueryGameTokenQrCodeStatus(success=True), (
+                            parsed_payload["uid"],
+                            parsed_payload["token"]
+                        )
+                elif api_result.retcode == -106:
+                    return QueryGameTokenQrCodeStatus(qrcode_expired=True), None
+                else:
+                    return QueryGameTokenQrCodeStatus(), None
+    except tenacity.RetryError as e:
+        if is_incorrect_return(e):
+            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 服务器没有正确返回")
+            logger.debug(f"网络请求返回: {res.text}")
+            return QueryGameTokenQrCodeStatus(incorrect_return=True), None
+        else:
+            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 请求失败")
+            return QueryGameTokenQrCodeStatus(network_error=True), None
