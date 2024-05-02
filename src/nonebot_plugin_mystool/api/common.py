@@ -1713,7 +1713,7 @@ async def fetch_game_token_qrcode(
                 if api_result.retcode == 0:
                     qrcode_url = api_result.data["url"]
                     url = urlparse(qrcode_url)
-                    return BaseApiStatus(success=True), (qrcode_url, parse_qs(url.query)["token"][0])
+                    return BaseApiStatus(success=True), (qrcode_url, parse_qs(url.query)["ticket"][0])
                 else:
                     logger.debug(f"网络请求返回: {res.text}")
                     return BaseApiStatus(), None
