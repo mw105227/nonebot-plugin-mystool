@@ -1737,7 +1737,7 @@ async def query_game_token_qrcode(
     :param ticket: 生成二维码时返回的 URL 参数中 ``ticket`` 字段的值
     :param device_id: 设备ID
     :param retry: 是否允许重试
-    :return 其中 ``Tuple[str, str]`` 为米游社账号ID和Game Token
+    :return 其中 ``Tuple[str, str]`` 为米游社账号ID和 GameToken
     """
     try:
         async for attempt in get_async_retry(retry):
