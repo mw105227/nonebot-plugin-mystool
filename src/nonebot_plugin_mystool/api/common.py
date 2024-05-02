@@ -1685,17 +1685,16 @@ async def verify_verification(
 
 
 async def fetch_game_token_qrcode(
-        account: UserAccount = None,
+        device_id: str = None,
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[Tuple[str, str]]]:
     """
     获取米游社扫码登录（GameToken）二维码
 
-    :param account: 用户账户数据
+    :param device_id: 设备ID
     :param retry: 是否允许重试
     :return 其中 ``Tuple[str, str]`` 为二维码URL和用于查询二维码扫描状态的 ``token``
     """
-    device_id = account.device_id_ios if account else generate_device_id()
     try:
         async for attempt in get_async_retry(retry):
             with attempt:
@@ -1728,18 +1727,17 @@ async def fetch_game_token_qrcode(
 
 async def query_game_token_qrcode(
         ticket: str,
-        account: UserAccount = None,
+        device_id: str = None,
         retry: bool = True
 ) -> Tuple[QueryGameTokenQrCodeStatus, Optional[Tuple[str, str]]]:
     """
     查询米游社扫码登录（GameToken）二维码扫描状态
 
     :param ticket: 生成二维码时返回的 URL 参数中 ``ticket`` 字段的值
-    :param account: 用户账户数据
+    :param device_id: 设备ID
     :param retry: 是否允许重试
     :return 其中 ``Tuple[str, str]`` 为米游社账号ID和Game Token
     """
-    device_id = account.device_id_ios if account else generate_device_id()
     try:
         async for attempt in get_async_retry(retry):
             with attempt:
