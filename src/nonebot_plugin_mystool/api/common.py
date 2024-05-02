@@ -1700,7 +1700,7 @@ async def fetch_game_token_qrcode(
         async for attempt in get_async_retry(retry):
             with attempt:
                 content = {
-                    "app_id": 1,
+                    "app_id": "1",
                     "device": device_id,
                 }
                 async with httpx.AsyncClient() as client:
