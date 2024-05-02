@@ -541,7 +541,7 @@ def generate_image(is_auto=True, callback: Callable[[bool], Any] = None):
     if plugin_config.good_list_image_config.MULTI_PROCESS:
         _lock: Lock = Manager().Lock()
         with Pool() as pool:
-            for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs":
+            for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs", "nap":
                 pool.apply_async(image_process,
                                  args=(game, _lock),
                                  callback=callback)
