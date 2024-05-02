@@ -1772,11 +1772,11 @@ async def query_game_token_qrcode(
                     return QueryGameTokenQrCodeStatus(), None
     except tenacity.RetryError as e:
         if is_incorrect_return(e):
-            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 服务器没有正确返回")
+            logger.exception("查询米游社扫码登录(query_game_token_qrcode) - 服务器没有正确返回")
             logger.debug(f"网络请求返回: {res.text}")
             return QueryGameTokenQrCodeStatus(incorrect_return=True), None
         else:
-            logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 请求失败")
+            logger.exception("查询米游社扫码登录(query_game_token_qrcode) - 请求失败")
             return QueryGameTokenQrCodeStatus(network_error=True), None
 
 
