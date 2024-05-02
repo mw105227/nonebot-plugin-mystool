@@ -14,7 +14,8 @@ from ..api.common import get_stoken_v2_by_v1, \
     get_ltoken_by_stoken, get_cookie_token_by_stoken, get_device_fp, fetch_game_token_qrcode, query_game_token_qrcode, \
     get_token_by_game_token
 from ..command.common import CommandRegistry
-from ..model import PluginDataManager, plugin_config, UserAccount, UserData, CommandUsage, BBSCookies
+from ..model import PluginDataManager, plugin_config, UserAccount, UserData, CommandUsage, BBSCookies, \
+    QueryGameTokenQrCodeStatus, GetCookieStatus
 from ..utils import logger, COMMAND_BEGIN, GeneralMessageEvent, GeneralPrivateMessageEvent, \
     GeneralGroupMessageEvent, \
     read_blacklist, read_whitelist, generate_device_id, get_file
@@ -54,114 +55,119 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
 
         # 1. 获取 GameToken 登录二维码
         device_id = generate_device_id()
-        login_status, (qrcode_url, qrcode_ticket) = await fetch_game_token_qrcode(device_id)
-        qrcode = await get_file(qrcode_url)
-        if login_status and qrcode:
-            await get_cookie.send("请用米游社App扫描下面的二维码进行登录")
-            msg_img = QQGuildMessageSegment.file_image(qrcode)
-            try:
-                await get_cookie.send(msg_img)
-            except (ActionFailed, AuditException) as e:
-                if isinstance(e, ActionFailed):
-                    logger.exception("发送包含二维码的登录消息失败")
-                    await get_cookie.finish("⚠️发送二维码失败，无法登录")
+        login_status, fetch_qrcode_ret = await fetch_game_token_qrcode(device_id)
+        if fetch_qrcode_ret:
+            qrcode_url, qrcode_ticket = fetch_qrcode_ret
+            qrcode = await get_file(qrcode_url)
+            if qrcode:
+                await get_cookie.send("请用米游社App扫描下面的二维码进行登录")
+                msg_img = QQGuildMessageSegment.file_image(qrcode)
+                try:
+                    await get_cookie.send(msg_img)
+                except (ActionFailed, AuditException) as e:
+                    if isinstance(e, ActionFailed):
+                        logger.exception("发送包含二维码的登录消息失败")
+                        await get_cookie.finish("⚠️发送二维码失败，无法登录")
 
-            # 2. 从二维码登录获取 GameToken
-            qrcode_query_times = plugin_config.preference.qrcode_wait_time / plugin_config.preference.qrcode_query_interval
-            for _ in range(qrcode_query_times):
-                login_status, (bbs_uid, game_token) = await query_game_token_qrcode(qrcode_ticket, device_id)
-                if login_status.qrcode_init or login_status.qrcode_scanned:
-                    await asyncio.sleep(plugin_config.preference.qrcode_query_interval)
-                    continue
-                elif login_status.qrcode_expired:
-                    get_cookie.reject("⚠️二维码已过期，登录失败")
-                elif not login_status:
-                    break
-                cookies = BBSCookies()
-                cookies.bbs_uid = bbs_uid
-                account = PluginDataManager.plugin_data.users[user_id].accounts.get(bbs_uid)
-                """当前的账户数据对象"""
-                if not account or not account.cookies:
-                    user.accounts.update({
-                        bbs_uid: UserAccount(
-                            phone_number=None,
-                            cookies=cookies,
-                            device_id_ios=device_id,
-                            device_id_android=generate_device_id())
-                    })
-                    account = user.accounts[bbs_uid]
-                else:
-                    account.cookies.update(cookies)
-                fp_status, account.device_fp = await get_device_fp(device_id)
-                if fp_status:
-                    logger.success(f"用户 {bbs_uid} 成功获取 device_fp: {account.device_fp}")
-                PluginDataManager.write_plugin_data()
+                # 2. 从二维码登录获取 GameToken
+                qrcode_query_times = plugin_config.preference.qrcode_wait_time / plugin_config.preference.qrcode_query_interval
+                for _ in range(qrcode_query_times):
+                    login_status, (bbs_uid, game_token) = await query_game_token_qrcode(qrcode_ticket, device_id)
+                    if login_status.qrcode_init or login_status.qrcode_scanned:
+                        await asyncio.sleep(plugin_config.preference.qrcode_query_interval)
+                        continue
+                    elif login_status.qrcode_expired:
+                        get_cookie.reject("⚠️二维码已过期，登录失败")
+                    elif not login_status:
+                        break
+                    cookies = BBSCookies()
+                    cookies.bbs_uid = bbs_uid
+                    account = PluginDataManager.plugin_data.users[user_id].accounts.get(bbs_uid)
+                    """当前的账户数据对象"""
+                    if not account or not account.cookies:
+                        user.accounts.update({
+                            bbs_uid: UserAccount(
+                                phone_number=None,
+                                cookies=cookies,
+                                device_id_ios=device_id,
+                                device_id_android=generate_device_id())
+                        })
+                        account = user.accounts[bbs_uid]
+                    else:
+                        account.cookies.update(cookies)
+                    fp_status, account.device_fp = await get_device_fp(device_id)
+                    if fp_status:
+                        logger.success(f"用户 {bbs_uid} 成功获取 device_fp: {account.device_fp}")
+                    PluginDataManager.write_plugin_data()
 
-                if login_status:
-                    # 3. 通过 GameToken 获取 stoken
-                    login_status, stoken = await get_token_by_game_token(bbs_uid, game_token)
                     if login_status:
-                        logger.success(f"用户 {bbs_uid} 成功获取 stoken: {stoken}")
-                        account.cookies.stoken = stoken
-                        PluginDataManager.write_plugin_data()
-
-                        # 4. 通过 stoken_v1 获取 stoken_v2 和 mid
-                        login_status, cookies = await get_stoken_v2_by_v1(account.cookies, device_id)
+                        # 3. 通过 GameToken 获取 stoken
+                        login_status, stoken = await get_token_by_game_token(bbs_uid, game_token)
                         if login_status:
-                            logger.success(f"用户 {bbs_uid} 成功获取 stoken_v2: {cookies.stoken_v2}")
-                            account.cookies.update(cookies)
+                            logger.success(f"用户 {bbs_uid} 成功获取 stoken: {stoken}")
+                            account.cookies.stoken = stoken
                             PluginDataManager.write_plugin_data()
 
-                            # 5. 通过 stoken_v2 获取 ltoken
-                            login_status, cookies = await get_ltoken_by_stoken(account.cookies, device_id)
+                            # 4. 通过 stoken_v1 获取 stoken_v2 和 mid
+                            login_status, cookies = await get_stoken_v2_by_v1(account.cookies, device_id)
                             if login_status:
-                                logger.success(f"用户 {bbs_uid} 成功获取 ltoken: {cookies.ltoken}")
+                                logger.success(f"用户 {bbs_uid} 成功获取 stoken_v2: {cookies.stoken_v2}")
                                 account.cookies.update(cookies)
                                 PluginDataManager.write_plugin_data()
 
-                                # 6. 通过 stoken_v2 获取 cookie_token
-                                login_status, cookies = await get_cookie_token_by_stoken(account.cookies, device_id)
+                                # 5. 通过 stoken_v2 获取 ltoken
+                                login_status, cookies = await get_ltoken_by_stoken(account.cookies, device_id)
                                 if login_status:
-                                    logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
+                                    logger.success(f"用户 {bbs_uid} 成功获取 ltoken: {cookies.ltoken}")
                                     account.cookies.update(cookies)
                                     PluginDataManager.write_plugin_data()
 
-                                    logger.success(
-                                        f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
-                                    await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
+                                    # 6. 通过 stoken_v2 获取 cookie_token
+                                    login_status, cookies = await get_cookie_token_by_stoken(account.cookies, device_id)
+                                    if login_status:
+                                        logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
+                                        account.cookies.update(cookies)
+                                        PluginDataManager.write_plugin_data()
 
-                break
+                                        logger.success(
+                                            f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
+                                        await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
+
+                    break
+            else:
+                await get_cookie.finish("⚠️下载登录二维码失败")
 
         if not login_status:
             notice_text = "⚠️登录失败："
-            if login_status.qrcode_expired:
-                notice_text += "登录二维码已过期！"
-            elif login_status.login_expired:
+            if isinstance(login_status, QueryGameTokenQrCodeStatus):
+                if login_status.qrcode_expired:
+                    notice_text += "登录二维码已过期！"
+            if isinstance(login_status, GetCookieStatus):
+                if login_status.missing_bbs_uid:
+                    notice_text += "Cookies缺少 bbs_uid（例如 ltuid, stuid）"
+                elif login_status.missing_login_ticket:
+                    notice_text += "Cookies缺少 login_ticket！"
+                elif login_status.missing_cookie_token:
+                    notice_text += "Cookies缺少 cookie_token！"
+                elif login_status.missing_stoken:
+                    notice_text += "Cookies缺少 stoken！"
+                elif login_status.missing_stoken_v1:
+                    notice_text += "Cookies缺少 stoken_v1"
+                elif login_status.missing_stoken_v2:
+                    notice_text += "Cookies缺少 stoken_v2"
+                elif login_status.missing_mid:
+                    notice_text += "Cookies缺少 mid"
+            if login_status.login_expired:
                 notice_text += "登录失效！"
             elif login_status.incorrect_return:
                 notice_text += "服务器返回错误！"
             elif login_status.network_error:
                 notice_text += "网络连接失败！"
-            elif login_status.missing_bbs_uid:
-                notice_text += "Cookies缺少 bbs_uid（例如 ltuid, stuid）"
-            elif login_status.missing_login_ticket:
-                notice_text += "Cookies缺少 login_ticket！"
-            elif login_status.missing_cookie_token:
-                notice_text += "Cookies缺少 cookie_token！"
-            elif login_status.missing_stoken:
-                notice_text += "Cookies缺少 stoken！"
-            elif login_status.missing_stoken_v1:
-                notice_text += "Cookies缺少 stoken_v1"
-            elif login_status.missing_stoken_v2:
-                notice_text += "Cookies缺少 stoken_v2"
-            elif login_status.missing_mid:
-                notice_text += "Cookies缺少 mid"
             else:
                 notice_text += "未知错误！"
             notice_text += " 如果部分步骤成功，你仍然可以尝试获取收货地址、兑换等功能"
             await get_cookie.finish(notice_text)
-        elif not qrcode:
-            await get_cookie.finish("⚠️下载登录二维码失败")
+
     else:
         await get_cookie.finish('⚠️目前可支持使用用户数已经满啦~')
 
