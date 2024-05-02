@@ -221,7 +221,7 @@ async def _(
         if plans:
             for plan in plans:
                 if plan.good.goods_id == good_id:
-                    plans.remove(plan)
+                    plans.discard(plan)
                     PluginDataManager.write_plugin_data()
                     for i in range(plugin_config.preference.exchange_thread_count):
                         scheduler.remove_job(job_id=f"exchange-plan-{hash(plan)}-{i}")
