@@ -1242,8 +1242,6 @@ async def get_ltoken_by_stoken(cookies: BBSCookies, device_id: str = None, retry
     headers["x-rpc-device_id"] = device_id if device_id else generate_device_id()
     if not cookies.stoken_v2:
         return GetCookieStatus(missing_stoken_v2=True), None
-    if not cookies.mid:
-        return GetCookieStatus(missing_mid=True), None
     try:
         async for attempt in get_async_retry(retry):
             with attempt:
