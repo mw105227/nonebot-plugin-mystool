@@ -96,6 +96,10 @@ class Preference(BaseModel):
     """是否启用管理员名单"""
     admin_list_path: Optional[Path] = data_path / "admin_list.txt"
     """管理员名单文件路径"""
+    qrcode_query_interval: float = 1
+    """检查米游社登录二维码扫描情况的请求间隔（单位：秒）"""
+    qrcode_wait_time: float = 120
+    """等待米游社登录二维码扫描的最长时间（单位：秒）"""
 
     @validator("log_path", allow_reuse=True)
     def _(cls, v: Optional[Path]):
