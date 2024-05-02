@@ -50,6 +50,7 @@ URL_CREATE_VERIFICATION = "https://bbs-api.miyoushe.com/misc/api/createVerificat
 URL_VERIFY_VERIFICATION = "https://bbs-api.miyoushe.com/misc/api/verifyVerification"
 URL_FETCH_GAME_TOKEN_QRCODE = "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/fetch"
 URL_QUERY_GAME_TOKEN_QRCODE = "https://hk4e-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/query"
+URL_GET_TOKEN_BY_GAME_TOKEN = "https://api-takumi.mihoyo.com/account/ma-cn-session/app/getTokenByGameToken"
 
 HEADERS_WEBAPI = {
     "Host": "webapi.account.mihoyo.com",
@@ -1777,3 +1778,45 @@ async def query_game_token_qrcode(
         else:
             logger.exception("获取米游社扫码登录(fetch_game_token_qrcode) - 请求失败")
             return QueryGameTokenQrCodeStatus(network_error=True), None
+
+
+async def get_token_by_game_token(
+        bbs_uid: str,
+        game_token: str,
+        retry: bool = True
+) -> Tuple[BaseApiStatus, Optional[str]]:
+    """
+    通过 GameToken 获取 SToken
+
+    :param bbs_uid: 米游社账号 UID
+    :param game_token: 有效的 GameToken
+    :param retry: 是否允许重试
+    :return: SToken
+    """
+    try:
+        async for attempt in get_async_retry(retry):
+            with attempt:
+                content = {
+                    "account_id": bbs_uid,
+                    "game_token": game_token
+                }
+                async with httpx.AsyncClient() as client:
+                    res = await client.post(
+                        URL_GET_TOKEN_BY_GAME_TOKEN,
+                        headers={"x-rpc-app_id": "1"},
+                        json=content,
+                        timeout=plugin_config.preference.timeout
+                    )
+                api_result = ApiResultHandler(res.json())
+                if api_result.retcode == 0:
+                    return BaseApiStatus(success=True), api_result.data["token"]["token"]
+                else:
+                    return BaseApiStatus(), None
+    except tenacity.RetryError as e:
+        if is_incorrect_return(e):
+            logger.exception("通过 GameToken 获取 SToken(get_token_by_game_token) - 服务器没有正确返回")
+            logger.debug(f"网络请求返回: {res.text}")
+            return BaseApiStatus(incorrect_return=True), None
+        else:
+            logger.exception("通过 GameToken 获取 SToken(get_token_by_game_token) - 请求失败")
+            return BaseApiStatus(network_error=True), None
