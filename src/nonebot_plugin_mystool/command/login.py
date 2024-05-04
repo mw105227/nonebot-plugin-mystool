@@ -3,7 +3,9 @@ import json
 from typing import Union
 
 from nonebot import on_command
-from nonebot.adapters.qq import MessageSegment as QQGuildMessageSegment, DirectMessageCreateEvent
+from nonebot.adapters.onebot.v11 import MessageEvent as OneBotV11MessageEvent, MessageSegment as OneBotV11MessageSegment
+from nonebot.adapters.qq import MessageSegment as QQGuildMessageSegment, DirectMessageCreateEvent, \
+    MessageEvent as QQGuildMessageEvent
 from nonebot.adapters.qq.exception import AuditException
 from nonebot.exception import ActionFailed
 from nonebot.internal.matcher import Matcher
@@ -62,7 +64,14 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
         if fetch_qrcode_ret:
             qrcode_url, qrcode_ticket = fetch_qrcode_ret
             await get_cookie.send("请用米游社App扫描下面的二维码进行登录")
-            msg_img = QQGuildMessageSegment.file_image(generate_qr_img(qrcode_url))
+            image_bytes = generate_qr_img(qrcode_url)
+            if isinstance(event, OneBotV11MessageEvent):
+                msg_img = OneBotV11MessageSegment.image(image_bytes)
+            elif isinstance(event, QQGuildMessageEvent):
+                msg_img = QQGuildMessageSegment.file_image(image_bytes)
+            else:
+                await get_cookie.finish("⚠️发送二维码失败，无法登录")
+                return
             try:
                 await get_cookie.send(msg_img)
             except (ActionFailed, AuditException) as e:
