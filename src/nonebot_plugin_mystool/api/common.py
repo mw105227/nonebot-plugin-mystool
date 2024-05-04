@@ -1790,14 +1790,13 @@ async def get_token_by_game_token(
         bbs_uid: str,
         game_token: str,
         retry: bool = True
-) -> Tuple[BaseApiStatus, Optional[str]]:
+) -> Tuple[BaseApiStatus, Optional[BBSCookies]]:
     """
-    通过 GameToken 获取 SToken（目前实际得到的是 STokenV2）
+    通过 GameToken 获取 STokenV2 和 mid
 
     :param bbs_uid: 米游社账号 UID
     :param game_token: 有效的 GameToken
     :param retry: 是否允许重试
-    :return: SToken
     """
     try:
         async for attempt in get_async_retry(retry):
@@ -1815,7 +1814,9 @@ async def get_token_by_game_token(
                     )
                 api_result = ApiResultHandler(res.json())
                 if api_result.retcode == 0:
-                    return BaseApiStatus(success=True), api_result.data["token"]["token"]
+                    stoken_v2 = api_result.data["token"]["token"]
+                    mid = api_result.data["user_info"]["mid"]
+                    return BaseApiStatus(success=True), BBSCookies(stoken_v2=stoken_v2, mid=mid)
                 else:
                     logger.debug(f"网络请求返回: {res.text}")
                     return BaseApiStatus(), None
@@ -1833,14 +1834,13 @@ async def get_cookie_token_by_game_token(
         bbs_uid: str,
         game_token: str,
         retry: bool = True
-) -> Tuple[BaseApiStatus, Optional[str]]:
+) -> Tuple[BaseApiStatus, Optional[BBSCookies]]:
     """
     通过 GameToken 获取 CookieToken
 
     :param bbs_uid: 米游社账号 UID
     :param game_token: 有效的 GameToken
     :param retry: 是否允许重试
-    :return: CookieToken
     """
     try:
         async for attempt in get_async_retry(retry):
@@ -1858,7 +1858,8 @@ async def get_cookie_token_by_game_token(
                     )
                 api_result = ApiResultHandler(res.json())
                 if api_result.retcode == 0:
-                    return BaseApiStatus(success=True), api_result.data["token"]["token"]
+                    cookie_token = api_result.data["token"]["token"]
+                    return BaseApiStatus(success=True), BBSCookies(cookie_token=cookie_token)
                 else:
                     logger.debug(f"网络请求返回: {res.text}")
                     return BaseApiStatus(), None

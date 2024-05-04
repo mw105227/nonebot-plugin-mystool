@@ -10,9 +10,9 @@ from nonebot.internal.matcher import Matcher
 from nonebot.internal.params import ArgStr
 from nonebot.params import T_State
 
-from ..api.common import get_stoken_v2_by_v1, \
-    get_ltoken_by_stoken, get_cookie_token_by_stoken, get_device_fp, fetch_game_token_qrcode, query_game_token_qrcode, \
-    get_token_by_game_token
+from ..api.common import get_ltoken_by_stoken, get_cookie_token_by_stoken, get_device_fp, fetch_game_token_qrcode, \
+    query_game_token_qrcode, \
+    get_token_by_game_token, get_cookie_token_by_game_token
 from ..command.common import CommandRegistry
 from ..model import PluginDataManager, plugin_config, UserAccount, UserData, CommandUsage, BBSCookies, \
     QueryGameTokenQrCodeStatus, GetCookieStatus
@@ -113,19 +113,12 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                 PluginDataManager.write_plugin_data()
 
                 if login_status:
-                    # 3. 通过 GameToken 获取 stoken
-                    login_status, stoken = await get_token_by_game_token(bbs_uid, game_token)
+                    # 3. 通过 GameToken 获取 stoken_v2
+                    login_status, cookies = await get_token_by_game_token(bbs_uid, game_token)
                     if login_status:
-                        logger.success(f"用户 {bbs_uid} 成功获取 stoken: {stoken}")
-                        account.cookies.stoken = stoken
+                        logger.success(f"用户 {bbs_uid} 成功获取 stoken_v2: {cookies.stoken_v2}")
+                        account.cookies.update(cookies)
                         PluginDataManager.write_plugin_data()
-
-                        # 4. 通过 stoken_v1 获取 stoken_v2 和 mid
-                        login_status, cookies = await get_stoken_v2_by_v1(account.cookies, device_id)
-                        if login_status:
-                            logger.success(f"用户 {bbs_uid} 成功获取 stoken_v2: {cookies.stoken_v2}")
-                            account.cookies.update(cookies)
-                            PluginDataManager.write_plugin_data()
 
                         if account.cookies.stoken_v2:
                             # 5. 通过 stoken_v2 获取 ltoken
@@ -135,7 +128,7 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                                 account.cookies.update(cookies)
                                 PluginDataManager.write_plugin_data()
 
-                            # 6. 通过 stoken_v2 获取 cookie_token
+                            # 6.1. 通过 stoken_v2 获取 cookie_token
                             login_status, cookies = await get_cookie_token_by_stoken(account.cookies, device_id)
                             if login_status:
                                 logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
@@ -145,6 +138,13 @@ async def handle_first_receive(event: Union[GeneralMessageEvent]):
                                 logger.success(
                                     f"{plugin_config.preference.log_head}米游社账户 {bbs_uid} 绑定成功")
                                 await get_cookie.finish(f"🎉米游社账户 {bbs_uid} 绑定成功")
+                        else:
+                            # 6.2. 通过 GameToken 获取 cookie_token
+                            login_status, cookies = await get_cookie_token_by_game_token(bbs_uid, game_token)
+                            if login_status:
+                                logger.success(f"用户 {bbs_uid} 成功获取 cookie_token: {cookies.cookie_token}")
+                                account.cookies.update(cookies)
+                                PluginDataManager.write_plugin_data()
             else:
                 get_cookie.finish("⚠️获取二维码扫描状态超时，请尝试重新登录")
 
