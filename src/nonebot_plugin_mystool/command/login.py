@@ -37,8 +37,6 @@ CommandRegistry.set_usage(
 
 @get_cookie.handle()
 async def handle_first_receive(event: Union[GeneralMessageEvent]):
-    if isinstance(event, GeneralGroupMessageEvent):
-        await get_cookie.finish("⚠️为了保护您的隐私，请私聊进行登录。")
     user_num = len(set(PluginDataManager.plugin_data.users.values()))  # 由于加入了用户数据绑定功能，可能存在重复的用户数据对象，需要去重
     if plugin_config.preference.enable_blacklist:
         if event.get_user_id() in read_blacklist():
