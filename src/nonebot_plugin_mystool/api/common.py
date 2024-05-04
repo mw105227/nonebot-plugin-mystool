@@ -1790,7 +1790,7 @@ async def get_token_by_game_token(
         retry: bool = True
 ) -> Tuple[BaseApiStatus, Optional[str]]:
     """
-    通过 GameToken 获取 SToken
+    通过 GameToken 获取 SToken（目前实际得到的是 STokenV2）
 
     :param bbs_uid: 米游社账号 UID
     :param game_token: 有效的 GameToken
