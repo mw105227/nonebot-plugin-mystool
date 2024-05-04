@@ -234,15 +234,12 @@ class UserAccount(BaseModelWithSetter):
     """安卓设备用 deviceID"""
     device_fp: Optional[str]
     """iOS设备用 deviceFp"""
-
     enable_mission: bool = True
     '''是否开启米游币任务计划'''
     enable_game_sign: bool = True
     '''是否开启米游社游戏签到计划'''
     enable_resin: bool = True
     '''是否开启便笺提醒'''
-    enable_weibo: bool = False
-    '''是否开启微博兑换码功能'''
     platform: Literal["ios", "android"] = "ios"
     '''设备平台'''
     mission_games: List[str] = ["BBSMission"]
@@ -251,10 +248,6 @@ class UserAccount(BaseModelWithSetter):
     '''崩铁便笺体力提醒阈值，0为一直提醒'''
     user_resin_threshold: int = 160
     '''原神便笺树脂提醒阈值，0为一直提醒'''
-    weibo_cookie: str = ""
-    '''微博查询活动签到用的 cookie'''
-    weibo_params: str = ""
-    '''微博查询活动签到用的 params'''
 
     def __init__(self, **data: Any):
         if not data.get("device_id_ios") or not data.get("device_id_android"):
@@ -283,7 +276,7 @@ class UserAccount(BaseModelWithSetter):
         显示名称
         """
         from ..utils.common import blur_phone
-        return f"{self.bbs_uid}({blur_phone(self.phone_number)})"
+        return f"{self.bbs_uid}({blur_phone(self.phone_number)})" if self.phone_number else self.bbs_uid
 
 
 class ExchangePlan(BaseModel):
@@ -374,6 +367,16 @@ class UserData(BaseModelWithSetter):
     """
     enable_notice: bool = True
     """是否开启通知"""
+    enable_weibo: bool = False
+    '''是否开启微博兑换码功能'''
+    weibo_cookie: str = ""
+    '''微博查询活动签到用的 cookie'''
+    weibo_params: str = ""
+    '''微博查询活动签到用的 params'''
+    geetest_url: Optional[str]
+    '''极验Geetest人机验证打码接口URL'''
+    geetest_params: Optional[Dict[str, Any]] = None
+    '''极验Geetest人机验证打码API发送的参数（除gt，challenge外）'''
     uuid: Optional[str] = None
     """用户UUID密钥，用于不同NoneBot适配器平台之间的数据同步，因此不可泄露"""
     qq_guild: Optional[Dict[str, int]] = {}

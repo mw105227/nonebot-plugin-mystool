@@ -7,7 +7,7 @@ from nonebot.params import T_State
 
 from ..api import BaseMission
 from ..command.common import CommandRegistry
-from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage
+from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage, UserData
 from ..utils import COMMAND_BEGIN, GeneralMessageEvent
 
 __all__ = ["setting", "account_setting", "global_setting"]
@@ -73,6 +73,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
     user_account = PluginDataManager.plugin_data.users[event.get_user_id()].accounts
     if not (account := user_account.get(bbs_uid)):
         await account_setting.reject('⚠️您发送的账号不在以上账号内，请重新发送')
+    state["user"] = PluginDataManager.plugin_data.users[event.get_user_id()]
     state['account'] = account
     state["prepare_to_delete"] = False
 
@@ -97,9 +98,10 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
     user_setting += f"\n6️⃣更改便笺体力提醒阈值 \
                       \n   当前原神提醒阈值：{account.user_resin_threshold} \
                       \n   当前崩铁提醒阈值：{account.user_stamina_threshold}"
-    user_setting += "\n7️⃣⚠️删除账户数据"
+    user_setting += "\n7️⃣设置微博相关功能"
+    user_setting += "\n8️⃣⚠️删除账户数据"
 
-    await account_setting.send(user_setting + '\n\n您要更改哪一项呢？请发送 1 / 2 / 3 / 4 / 5 / 6 / 7'
+    await account_setting.send(user_setting + '\n\n您要更改哪一项呢？请发送 1 / 2 / 3 / 4 / 5 / 6 / 7/ 8'
                                               '\n🚪发送“退出”即可退出')
 
 
@@ -152,7 +154,18 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         )
         state["setting_item"] = "setting_notice_value"
         return
-    elif setting_id == '7':
+    elif setting_id == "7":
+        user: UserData = state["user"]
+        msg = ""
+        msg += "请发送想要设置的微博参数："
+        msg += f"\n1. 微博签到与兑换：{'开' if user.enable_weibo else '关'}"
+        msg += "\n2. 微博cookie" \
+               "\n3. 微博params" \
+               "\n\n🚪发送“退出”即可退出"
+        await account_setting.send(msg)
+        state["setting_item"] = "weibo_value"
+        return
+    elif setting_id == '8':
         state["prepare_to_delete"] = True
         await account_setting.reject(f"⚠️确认删除账号 {account.display_name} ？发送 \"确认删除\" 以确定。")
     elif setting_id == '确认删除' and state["prepare_to_delete"]:
@@ -186,6 +199,28 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             state["setting_item"] = "setting_notice_value_sr"
         else:
             await account_setting.reject("⚠️您的输入有误，请重新输入")
+
+    elif state["setting_item"] == "weibo_value":
+        user: UserData = state["user"]
+        if notice_game == "1":
+            user.enable_weibo = not user.enable_weibo
+            PluginDataManager.write_plugin_data()
+            await account_setting.finish(f"微博签到与兑换功能已 {'✅开启' if user.enable_weibo else '❌关闭'}")
+        elif notice_game == "2":
+            await account_setting.send(
+                "请微博cookie："
+                "发送格式不带cookie="
+                "\n\n🚪发送“退出”即可退出"
+            )
+            state["setting_item"] = "setting_weibo_value_cookie"
+        elif notice_game == "3":
+            await account_setting.send(
+                "请微博params："
+                "发送格式不带params="
+                "params必要参数: s、gsid、aid、from"
+                "\n\n🚪发送“退出”即可退出"
+            )
+            state["setting_item"] = "setting_weibo_value_params"
 
 
 @account_setting.got('setting_value')
@@ -240,6 +275,18 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         PluginDataManager.write_plugin_data()
         setting_value = setting_value.replace(" ", "、")
         await account_setting.finish(f"💬执行米游币任务的频道已更改为『{setting_value}』")
+
+    # 做区分，以下应用在用户数据中，而非米游社数据中
+    user: UserData = state["user"]
+    print(user)
+    if state["setting_item"] == "setting_weibo_value_cookie":
+        user.weibo_cookie = str(setting_value)
+        PluginDataManager.write_plugin_data()
+        await account_setting.finish("设置微博cookie成功")
+    elif state["setting_item"] == "setting_weibo_value_params":
+        user.weibo_params = str(setting_value)
+        PluginDataManager.write_plugin_data()
+        await account_setting.finish("设置微博params成功")
 
 
 global_setting = on_command(plugin_config.preference.command_start + '通知设置', priority=5, block=True)

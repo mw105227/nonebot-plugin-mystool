@@ -169,7 +169,8 @@ async def _(
             'bh2': (await get_good_list('bh2'))[1],
             'xq': (await get_good_list('hkrpg'))[1],
             'wd': (await get_good_list('nxx'))[1],
-            'bbs': (await get_good_list('bbs'))[1]
+            'bbs': (await get_good_list('bbs'))[1],
+            'nap': (await get_good_list('nap'))[1]
         }
         flag = True
         break_flag = False
@@ -220,7 +221,7 @@ async def _(
         if plans:
             for plan in plans:
                 if plan.good.goods_id == good_id:
-                    plans.remove(plan)
+                    plans.discard(plan)
                     PluginDataManager.write_plugin_data()
                     for i in range(plugin_config.preference.exchange_thread_count):
                         scheduler.remove_job(job_id=f"exchange-plan-{hash(plan)}-{i}")
@@ -312,6 +313,7 @@ async def _(_: Union[GeneralMessageEvent], matcher: Matcher, arg=CommandArg()):
                                       "\n- 崩坏2"
                                       "\n- 崩坏：星穹铁道"
                                       "\n- 未定事件簿"
+                                      "\n- 绝区零"
                                       "\n- 米游社"
                                       "\n若是商品图片与米游社商品不符或报错 请发送“更新”哦~"
                                       "\n—— 🚪发送“退出”以结束")
@@ -333,6 +335,8 @@ async def _(event: Union[GeneralMessageEvent], arg=ArgPlainText("content")):
         arg = ('nxx', '未定事件簿')
     elif arg in ['大别野', '米游社', '综合']:
         arg = ('bbs', '米游社')
+    elif arg in ['绝区零']:
+        arg = ('nap', '绝区零')
     elif arg == '更新':
         threading.Thread(target=generate_image, kwargs={"is_auto": False}).start()
         await get_good_image.finish('⏳后台正在生成商品信息图片，请稍后查询')
@@ -537,14 +541,14 @@ def generate_image(is_auto=True, callback: Callable[[bool], Any] = None):
     if plugin_config.good_list_image_config.MULTI_PROCESS:
         _lock: Lock = Manager().Lock()
         with Pool() as pool:
-            for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs":
+            for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs", "nap":
                 pool.apply_async(image_process,
                                  args=(game, _lock),
                                  callback=callback)
             pool.close()
             pool.join()
     else:
-        for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs":
+        for game in "bh3", "hk4e", "bh2", "hkrpg", "nxx", "bbs", "nap":
             image_process(game)
 
     logger.info(f"{plugin_config.preference.log_head}已完成所有分区的商品列表图片生成")
