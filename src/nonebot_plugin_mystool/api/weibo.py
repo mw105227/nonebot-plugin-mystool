@@ -120,7 +120,7 @@ class WeiboCode:
                         img = v
             for key, values in code.items():
                 msg += f"<{key}>超话兑换码：" \
-                       f"\n1️⃣" \
+                       "\n1️⃣" \
                        f"  \n{values[0]}" \
                        "\n2️⃣" \
                        f"  \n{values[1]}" \
