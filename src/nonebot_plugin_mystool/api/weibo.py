@@ -122,7 +122,7 @@ class WeiboCode:
                 msg += f"<{key}>超话兑换码：" \
                        f"\n1️⃣" \
                        f"  \n{values[0]}" \
-                       f"\n2️⃣" \
+                       "\n2️⃣" \
                        f"  \n{values[1]}" \
                        f"\n3️⃣" \
                        f"  \n{values[2]}"
