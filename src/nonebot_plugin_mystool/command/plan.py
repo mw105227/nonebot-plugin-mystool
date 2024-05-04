@@ -28,7 +28,7 @@ from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, Genera
     get_unique_users, get_validate, read_admin_list
 
 __all__ = [
-    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check", \
+    "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check",
     "manually_starrail_note_check", "manually_weibo_check"
 ]
 
@@ -655,7 +655,9 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
 
     :param user: 用户对象
     :param user_ids: 发送通知的所有用户ID
+    :param matcher: nonebot ``Matcher``
     """
+    msg, img = None, None
     if user.enable_weibo:
         # account = UserAccount(account) 
         weibo = WeiboCode(user)
@@ -665,8 +667,8 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
                 msg, img = result
             else:
                 msg = result
-        except Exception as e:
-            messages = e
+        except Exception:
+            pass
         if matcher:
             if img:
                 onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
