@@ -12,10 +12,6 @@
 
 # mysTool - 米游社辅助工具插件
 
-> [!IMPORTANT]
-> v2.0.0 突破性更新
-> https://github.com/Ljzd-PRO/nonebot-plugin-mystool/releases/tag/v2.0.0
-
 ## ⚡ 功能和特性
 
 - 支持QQ聊天和QQ频道
