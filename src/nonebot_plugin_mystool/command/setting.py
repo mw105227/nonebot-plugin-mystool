@@ -160,8 +160,8 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         msg += "请发送想要设置的微博参数："
         msg += f"\n1. 微博签到与兑换：{'开' if user.enable_weibo else '关'}"
         msg += "\n2. 微博cookie" \
-                "\n3. 微博params" \
-                "\n\n🚪发送“退出”即可退出"
+               "\n3. 微博params" \
+               "\n\n🚪发送“退出”即可退出"
         await account_setting.send(msg)
         state["setting_item"] = "weibo_value"
         return
@@ -223,7 +223,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             state["setting_item"] = "setting_weibo_value_params"
 
 
-
 @account_setting.got('setting_value')
 async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr()):
     if setting_value == '退出':
@@ -277,7 +276,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         setting_value = setting_value.replace(" ", "、")
         await account_setting.finish(f"💬执行米游币任务的频道已更改为『{setting_value}』")
 
-    #做区分，以下应用在用户数据中，而非米游社数据中
+    # 做区分，以下应用在用户数据中，而非米游社数据中
     user: UserData = state["user"]
     print(user)
     if state["setting_item"] == "setting_weibo_value_cookie":
@@ -288,8 +287,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         user.weibo_params = str(setting_value)
         PluginDataManager.write_plugin_data()
         await account_setting.finish("设置微博params成功")
-
-
 
 
 global_setting = on_command(plugin_config.preference.command_start + '通知设置', priority=5, block=True)

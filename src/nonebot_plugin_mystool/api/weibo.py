@@ -1,11 +1,12 @@
+import random
 import re
 from urllib.parse import unquote
 
 import httpx
-import random
 
 from ..model import UserData
 from ..utils import logger
+
 
 def cookie_to_dict(cookie):
     if cookie and '=' in cookie:
@@ -65,8 +66,8 @@ class WeiboCode:
             if group:
                 ticket_id[key] = {}
                 ticket_id[key]['id'] = [i
-                                  for id in group
-                                  for i in re.findall(r'ticket_id=(\d*)', unquote(unquote(id['scheme'])))]
+                                        for id in group
+                                        for i in re.findall(r'ticket_id=(\d*)', unquote(unquote(id['scheme'])))]
                 ticket_id[key]['img'] = group[random.randint(0, len(group) - 1)]['pic']
             else:
                 logger.info(f'{key}超话当前没有兑换码')
@@ -74,7 +75,6 @@ class WeiboCode:
             return "超话无兑换码活动"
         else:
             return ticket_id
-        
 
     async def get_code(self, id: str):
         url = self.draw_url
@@ -93,13 +93,13 @@ class WeiboCode:
             if responses['msg'] == 'fail':
                 responses['msg'] = responses['data']['fail_desc1']
             result = {'success': True, 'id': id, 'code': code} if code else {'success': False, 'id': id,
-                                                                            'response': responses['msg']}
+                                                                             'response': responses['msg']}
             return result['code'] if result['success'] else responses['msg']
         else:
             return '获取失败，请重新设置wb_cookie'
 
     async def get_code_list(self):
-        ticket_id = await self.get_ticket_id   #有活动则返回一个dict，没活动则返回一个str
+        ticket_id = await self.get_ticket_id  # 有活动则返回一个dict，没活动则返回一个str
         '''
         ticket_id = {
             '原神/崩铁': {
@@ -108,24 +108,24 @@ class WeiboCode:
             }
         }
         '''
-        if isinstance(ticket_id,dict):
+        if isinstance(ticket_id, dict):
             msg = ""
             code = {key: [] for key in ticket_id.keys()}
             for key, value in ticket_id.items():
                 for k, v in value.items():
                     if k == 'id':
-                        for item in v: 
+                        for item in v:
                             code[key].append(await self.get_code(item))
                     elif k == 'img':
                         img = v
             for key, values in code.items():
                 msg += f"<{key}>超话兑换码：" \
-                    f"\n1️⃣" \
-                    f"  \n{values[0]}" \
-                    f"\n2️⃣" \
-                    f"  \n{values[1]}" \
-                    f"\n3️⃣" \
-                    f"  \n{values[2]}"
+                       "\n1️⃣" \
+                       f"  \n{values[0]}" \
+                       "\n2️⃣" \
+                       f"  \n{values[1]}" \
+                       "\n3️⃣" \
+                       f"  \n{values[2]}"
             return msg, img
-        else: 
+        else:
             return ticket_id
