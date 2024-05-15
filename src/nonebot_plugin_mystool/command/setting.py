@@ -213,15 +213,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             user.enable_weibo = not user.enable_weibo
             PluginDataManager.write_plugin_data()
             await account_setting.finish(f"微博签到与兑换功能已 {'✅开启' if user.enable_weibo else '❌关闭'}")
-        # elif notice_game == "添加账号":
-        #     await account_setting.send(
-        #         "发送以下格式进行添加："
-        #         "账号名称|cookie|params"
-        #         "cookie格式:SUB=;SUBP=;等"
-        #         "params格式:s=;gsid=;aid=;from=;等"
-        #         "\n\n🚪发送“退出”即可退出"
-        #     )
-        #     state["setting_item"] = "setting_weibo_value_cookie"
         else:
             await account_setting.send(
                 "参数说明：\n"
