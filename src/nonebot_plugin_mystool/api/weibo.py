@@ -7,49 +7,49 @@ from urllib.parse import unquote
 
 import httpx
 
-from ..model import UserData
 from ..utils import logger
 
+class tool():
+    @staticmethod
+    def cookie_to_dict(cookie):
+        if cookie and '=' in cookie:
+            cookie = dict([line.strip().split('=', 1) for line in cookie.split(';')])
+        return cookie
 
-def cookie_to_dict(cookie):
-    if cookie and '=' in cookie:
-        cookie = dict([line.strip().split('=', 1) for line in cookie.split(';')])
-    return cookie
-
-
-def nested_lookup(obj, key, with_keys=False, fetch_first=False):
-    result = list(_nested_lookup(obj, key, with_keys=with_keys))
-    if with_keys:
-        values = [v for k, v in _nested_lookup(obj, key, with_keys=with_keys)]
-        result = {key: values}
-    if fetch_first:
-        result = result[0] if result else result
-    return result
-
-
-def _nested_lookup(obj, key, with_keys=False):
-    if isinstance(obj, list):
-        for i in obj:
-            yield from _nested_lookup(i, key, with_keys=with_keys)
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if key == k:
-                if with_keys:
-                    yield k, v
-                else:
-                    yield v
-            if isinstance(v, (list, dict)):
-                yield from _nested_lookup(v, key, with_keys=with_keys)
+    @staticmethod
+    def nested_lookup(obj, key, with_keys=False, fetch_first=False):
+        result = list(tool._nested_lookup(obj, key, with_keys=with_keys))
+        if with_keys:
+            values = [v for k, v in tool._nested_lookup(obj, key, with_keys=with_keys)]
+            result = {key: values}
+        if fetch_first:
+            result = result[0] if result else result
+        return result
 
 
-def Weibo_UserDict(data):
-    return dict([line.strip().split(':', 1) for line in data.split('|')])
+    def _nested_lookup(obj, key, with_keys=False):
+        if isinstance(obj, list):
+            for i in obj:
+                yield from tool._nested_lookup(i, key, with_keys=with_keys)
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if key == k:
+                    if with_keys:
+                        yield k, v
+                    else:
+                        yield v
+                if isinstance(v, (list, dict)):
+                    yield from tool._nested_lookup(v, key, with_keys=with_keys)
+
+    @staticmethod
+    def Weibo_UserDict(data):
+        return dict([line.strip().split(':', 1) for line in data.split('|')])
 
 class WeiboCode:
     def __init__(self, user_data: dict):
-        self.params = cookie_to_dict(user_data['params'].replace('&', ';')) if user_data['params'] else None
+        self.params = tool.cookie_to_dict(user_data['params'].replace('&', ';')) if user_data['params'] else None
         """params: s=xxxxxx; gsid=xxxxxx; aid=xxxxxx; from=xxxxxx"""
-        self.cookie = cookie_to_dict(user_data['cookie'])
+        self.cookie = tool.cookie_to_dict(user_data['cookie'])
         self.container_id = {'原神': '100808fc439dedbb06ca5fd858848e521b8716',
                              '崩铁': '100808e1f868bf9980f09ab6908787d7eaf0f0'}
         self.ua = 'WeiboOverseas/4.4.6 (iPhone; iOS 14.0.1; Scale/2.00)'
@@ -68,7 +68,7 @@ class WeiboCode:
             async with httpx.AsyncClient() as client:
                 response = await client.get(url)
             responses = response.json()
-            group = nested_lookup(responses, 'group', fetch_first=True)
+            group = tool.nested_lookup(responses, 'group', fetch_first=True)
             if group:
                 ticket_id[key] = {}
                 ticket_id[key]['id'] = [i
@@ -201,7 +201,7 @@ class WeiboSign():
                 "User-Agent": "Mi+10_12_WeiboIntlAndroid_6020",
                 "Host": "api.weibo.cn"
             }
-            cookies = cookie_to_dict(wb_userdata['wb_cookie'])
+            cookies = tool.cookie_to_dict(wb_userdata['cookie'])
             async with httpx.AsyncClient() as client:
                 res = await client.get(url, headers=headers, params=params, cookies=cookies)
             json_chdata = json.load(res)['cards'][0]['card_group']
@@ -226,7 +226,7 @@ class WeiboSign():
             'Referer': 'https://m.weibo.cn'
         }
 
-        param_d = cookie_to_dict(wb_userdata['param'])
+        param_d = tool.cookie_to_dict(wb_userdata['params'])
 
         params = {
             "gsid": param_d['gsid'] if 'gsid' in param_d else None,        # 账号身份验证
