@@ -163,9 +163,10 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         count = 1
         if len(user.weibo) > 0:
             for users in user.weibo:
-                for user in users.keys():
-                    count += 1
-                    msg += f"\n{count}. {str(user)}"
+                for k_u, v_u in users.items():
+                    if k_u == 'name':
+                        count += 1
+                        msg += f"\n{count}. {str(v_u)}"
         msg += f"\n发送“添加账号”或已有账号名称进行添加/修改"
         msg += "\n\n🚪发送“退出”即可退出"
         await account_setting.send(msg)
@@ -223,11 +224,14 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
         #     state["setting_item"] = "setting_weibo_value_cookie"
         else:
             await account_setting.send(
-                "发送以下格式进行添加："
-                "name:账号名称|cookie:xxx|params:xxx"
-                "cookie格式:SUB=;SUBP=;等"
-                "params格式:s=;gsid=;aid=;from=;等"
-                "\n\n🚪发送“退出”即可退出"
+                "参数说明：\n"
+                "  cookie必填SUB,SUBP\n"
+                "  params必填s,gsid,aid,from\n"
+                "  参数以 ; 相连\n"
+                "  如 xxx: a=x;b=x;\n"
+                "发送以下格式进行添加：\n"
+                "name:名称|cookie:xxx|params:xxx\n\n"
+                "🚪发送“退出”即可退出"
             )
             state["setting_item"] = "setting_weibo_value"
 
