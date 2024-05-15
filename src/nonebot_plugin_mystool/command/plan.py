@@ -660,28 +660,29 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     msg, img = None, None
     if user.enable_weibo:
         # account = UserAccount(account) 
-        weibo = WeiboCode(user)
-        result = await weibo.get_code_list()
-        try:
-            if isinstance(result, tuple):
-                msg, img = result
+        for user_data in user.weibo:
+            weibo = WeiboCode(user_data)
+            result = await weibo.get_code_list()
+            try:
+                if isinstance(result, tuple):
+                    msg, img = result
+                else:
+                    msg = result
+            except Exception:
+                pass
+            if matcher:
+                if img:
+                    onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
+                    messages = msg + onebot_img_msg
+                else:
+                    messages = msg
+                await matcher.send(messages)
             else:
-                msg = result
-        except Exception:
-            pass
-        if matcher:
-            if img:
-                onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
-                messages = msg + onebot_img_msg
-            else:
-                messages = msg
-            await matcher.send(messages)
-        else:
-            if img and '无' not in msg:
-                saa_img = Image(await get_file(img))
-                messages = msg + saa_img
-                for user_id in user_ids:
-                    await send_private_msg(user_id=user_id, message=messages)
+                if img and '无' not in msg:
+                    saa_img = Image(await get_file(img))
+                    messages = msg + saa_img
+                    for user_id in user_ids:
+                        await send_private_msg(user_id=user_id, message=messages)
     else:
         message = "未开启微博功能"
         if matcher:
