@@ -216,6 +216,7 @@ class PluginTest:
             self.path.mkdir(parents=True)
             proc = await create_subprocess_shell(
                 "poetry init -n --name plugin-test"
+                " && cat pyproject.toml"
                 " && poetry env info --ansi"
                 f" && poetry add {self.whl_path}",
                 stdout=subprocess.PIPE,
