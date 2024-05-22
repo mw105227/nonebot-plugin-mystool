@@ -1,13 +1,14 @@
+import copy
+import json
 import random
 import re
-import json
-import copy
 from datetime import date
 from urllib.parse import unquote
 
 import httpx
 
 from ..utils import logger
+
 
 class tool():
     @staticmethod
@@ -26,7 +27,6 @@ class tool():
             result = result[0] if result else result
         return result
 
-
     def _nested_lookup(obj, key, with_keys=False):
         if isinstance(obj, list):
             for i in obj:
@@ -44,6 +44,7 @@ class tool():
     @staticmethod
     def Weibo_UserDict(data):
         return dict([line.strip().split(':', 1) for line in data.split('|')])
+
 
 class WeiboCode:
     def __init__(self, user_data: dict):
@@ -136,8 +137,9 @@ class WeiboCode:
         else:
             return ticket_id
 
+
 class WeiboSign():
-    
+
     async def format_chaohua_data(data: list):
         '''
         单个超话社区格式：
@@ -173,7 +175,7 @@ class WeiboSign():
             "cleaned": true
         },
         '''
-        #去除杂项字典
+        # 去除杂项字典
         data = [ch for ch in data if ch.get('card_type') == '8']
         CHAOHUA_list = []
         for onedata in data:
@@ -214,7 +216,7 @@ class WeiboSign():
             return '超话列表为空'
         except Exception as e:
             # print(f'{type(e)}: {e}')
-            return  e
+            return e
 
     @staticmethod
     async def sign(wb_userdata: dict):
@@ -229,15 +231,15 @@ class WeiboSign():
         param_d = tool.cookie_to_dict(wb_userdata['params'])
 
         params = {
-            "gsid": param_d['gsid'] if 'gsid' in param_d else None,        # 账号身份验证
-            "s": param_d['s'] if 's' in param_d else None,                 # 校验参数
-            "from": param_d['from'] if 'from' in param_d else None,        # 客户端身份验证
-            "c": param_d['c'] if 'c' in param_d else None,                 # 客户端身份验证
-            "aid": param_d['aid'] if 'aid' in param_d else None,           # 作用未知
+            "gsid": param_d['gsid'] if 'gsid' in param_d else None,  # 账号身份验证
+            "s": param_d['s'] if 's' in param_d else None,  # 校验参数
+            "from": param_d['from'] if 'from' in param_d else None,  # 客户端身份验证
+            "c": param_d['c'] if 'c' in param_d else None,  # 客户端身份验证
+            "aid": param_d['aid'] if 'aid' in param_d else None,  # 作用未知
         }
 
         msg = f'{date.today()}\n' \
-                '微博超话签到：\n'
+              '微博超话签到：\n'
         try:
             chaohua_list = await WeiboSign.ch_list(params, wb_userdata)
             if not isinstance(chaohua_list, list):
@@ -249,13 +251,13 @@ class WeiboSign():
                     async with httpx.AsyncClient() as client:
                         res = await client.get(url, headers=headers, params=params_copy, timeout=10)
                     res_data = json.loads(res.text)
-                    if 'msg' in res_data and 'errmsg' not in res_data:      # 今日首次签到成功                
+                    if 'msg' in res_data and 'errmsg' not in res_data:  # 今日首次签到成功
                         msg += f"{ch['title_sub']}  ✅\n"
-                    elif 'errmsg' in res_data :                             # 签到出错
+                    elif 'errmsg' in res_data:  # 签到出错
                         # msg = f"{res_data['errmsg']}\n"
                         msg += f"{ch['title_sub']}  ❌\n"
                         msg += f"--{res_data['errmsg']}\n"
-                elif ch['is_sign'] == '已签':                               # 今日再次进行签到，且之前已经签到成功
+                elif ch['is_sign'] == '已签':  # 今日再次进行签到，且之前已经签到成功
                     msg += f"{ch['title_sub']}  ✅\n"
             return msg
         except Exception as e:
