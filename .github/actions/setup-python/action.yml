@@ -22,5 +22,4 @@ runs:
 
     - run: |
         poetry install --with test
-        poetry build
       shell: bash
