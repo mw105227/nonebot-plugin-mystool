@@ -37,8 +37,6 @@ jobs:
         uses: ./.github/actions/setup-python
         with:
           python-version: "3.11"
-      - name: Poetry build
-        run: poetry build
       - name: Test Plugin
         id: plugin-test
         run: |
