@@ -236,6 +236,7 @@ async def get_validate(user: UserData, gt: str = None, challenge: str = None, re
     """
     使用打码平台获取人机验证validate
 
+    :param user: 用户数据对象
     :param gt: 验证码gt
     :param challenge: challenge
     :param retry: 是否允许重试
