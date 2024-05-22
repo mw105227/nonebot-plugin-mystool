@@ -207,15 +207,15 @@ class PluginTest:
         # # Poetry 配置
         # # https://python-poetry.org/docs/configuration/#virtualenvsin-project
         # env["POETRY_VIRTUALENVS_IN_PROJECT"] = "true"
-        # https://python-poetry.org/docs/configuration/#virtualenvsprefer-active-python-experimental
-        env["POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"] = "true"
+        # # https://python-poetry.org/docs/configuration/#virtualenvsprefer-active-python-experimental
+        # env["POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"] = "true"
         return env
 
     async def create_poetry_project(self) -> None:
         if not self.path.exists():
             self.path.mkdir(parents=True)
             proc = await create_subprocess_shell(
-                f"""poetry init --name=plugin-test -n && sed -i "s/\\^/~/g" pyproject.toml && poetry env info --ansi && poetry add {self.whl_path}""",
+                f"""poetry init --name=plugin-test --python=">=3.9,<4.0" -n && sed -i "s/\\^/~/g" pyproject.toml && poetry env info --ansi && poetry add {self.whl_path}""",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=self.path,
