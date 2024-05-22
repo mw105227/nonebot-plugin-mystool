@@ -207,8 +207,8 @@ class PluginTest:
         # # Poetry 配置
         # # https://python-poetry.org/docs/configuration/#virtualenvsin-project
         # env["POETRY_VIRTUALENVS_IN_PROJECT"] = "true"
-        # # https://python-poetry.org/docs/configuration/#virtualenvsprefer-active-python-experimental
-        # env["POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"] = "true"
+        # https://python-poetry.org/docs/configuration/#virtualenvsprefer-active-python-experimental
+        env["POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"] = "true"
         return env
 
     async def create_poetry_project(self) -> None:
