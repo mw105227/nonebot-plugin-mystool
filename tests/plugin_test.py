@@ -297,7 +297,7 @@ class PluginTest:
 async def main():
     # 测试插件
     test = PluginTest(
-        "src/nonebot_plugin_mystool-*-py3-none-any.whl",
+        "dist/nonebot_plugin_mystool-*-py3-none-any.whl",
         "nonebot_plugin_mystool",
         "",
     )
