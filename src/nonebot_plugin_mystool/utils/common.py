@@ -257,6 +257,8 @@ async def get_validate(user: UserData, gt: str = None, challenge: str = None, re
     for key, value in content.items():
         if isinstance(value, str):
             content[key] = value.format(gt=gt, challenge=challenge)
+    debug_log = {"geetest_url": geetest_url, "params": params, "content": content}
+    logger.debug(f"{plugin_config.preference.log_head}get_validate: {debug_log}")
     try:
         async for attempt in get_async_retry(retry):
             with attempt:
@@ -268,11 +270,11 @@ async def get_validate(user: UserData, gt: str = None, challenge: str = None, re
                         timeout=60
                     )
                 geetest_data = res.json()
+                logger.debug(f"{plugin_config.preference.log_head}人机验证结果：{geetest_data}")
                 validate = geetest_data['data']['validate']
                 seccode = geetest_data['data'].get('seccode') or f"{validate}|jordan"
-                logger.debug(f"{plugin_config.preference.log_head}人机验证结果：{geetest_data}")
                 return GeetestResult(validate=validate, seccode=seccode)
-    except tenacity.RetryError as e:
+    except tenacity.RetryError:
         logger.exception(f"{plugin_config.preference.log_head}获取人机验证validate失败")
 
 
