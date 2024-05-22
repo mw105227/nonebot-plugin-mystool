@@ -147,7 +147,7 @@ class PluginTest:
         path = next(glob.iglob(whl_path), None)
         if not path:
             raise FileNotFoundError
-        self.whl_path = path
+        self.whl_path = Path(path).root
         self.module_name = module_name
         self.config = config
         self._plugin_list = None
