@@ -11,12 +11,11 @@
 # ruff: noqa: T201, ASYNC101
 
 import asyncio
+import glob
 import os
 import re
 from asyncio import create_subprocess_shell, run, subprocess
 from pathlib import Path
-
-from nonebot_plugin_mystool._version import __version__
 
 FAKE_SCRIPT = """from typing import Optional, Union
 
@@ -143,9 +142,12 @@ def strip_ansi(text: str | None) -> str:
 
 class PluginTest:
     def __init__(
-            self, whl_path: Path, module_name: str, config: str | None = None
+            self, whl_path: str, module_name: str, config: str | None = None
     ) -> None:
-        self.whl_path = whl_path
+        path = next(glob.iglob(whl_path), None)
+        if not path:
+            raise FileNotFoundError
+        self.whl_path = path
         self.module_name = module_name
         self.config = config
         self._plugin_list = None
@@ -295,7 +297,7 @@ class PluginTest:
 async def main():
     # 测试插件
     test = PluginTest(
-        Path(f"src/nonebot_plugin_mystool-{__version__[1:]}-py3-none-any.whl"),
+        "src/nonebot_plugin_mystool-*-py3-none-any.whl",
         "nonebot_plugin_mystool",
         "",
     )
