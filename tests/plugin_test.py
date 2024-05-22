@@ -11,7 +11,6 @@
 # ruff: noqa: T201, ASYNC101
 
 import asyncio
-import glob
 import os
 import re
 from asyncio import create_subprocess_shell, run, subprocess
@@ -142,14 +141,11 @@ def strip_ansi(text: str | None) -> str:
 
 class PluginTest:
     def __init__(
-            self, whl_path: str, module_name: str, config: str | None = None
+            self, module_name: str, config: str | None = None, python: str = ">=3.9,<4.0"
     ) -> None:
-        path = next(glob.iglob(whl_path), None)
-        if not path:
-            raise FileNotFoundError
-        self.whl_path = Path(path).root
         self.module_name = module_name
         self.config = config
+        self.python = python
         self._plugin_list = None
 
         self._create = False
@@ -197,25 +193,19 @@ class PluginTest:
             f.write(f"{summary}")
         return self._run, output
 
-    def get_env(self) -> dict[str, str]:
+    @staticmethod
+    def get_env() -> dict[str, str]:
         """获取环境变量"""
         env = os.environ.copy()
-        # # 删除虚拟环境变量，防止 poetry 使用运行当前脚本的虚拟环境
-        # env.pop("VIRTUAL_ENV", None)
         # 启用 LOGURU 的颜色输出
         env["LOGURU_COLORIZE"] = "true"
-        # # Poetry 配置
-        # # https://python-poetry.org/docs/configuration/#virtualenvsin-project
-        # env["POETRY_VIRTUALENVS_IN_PROJECT"] = "true"
-        # # https://python-poetry.org/docs/configuration/#virtualenvsprefer-active-python-experimental
-        # env["POETRY_VIRTUALENVS_PREFER_ACTIVE_PYTHON"] = "true"
         return env
 
     async def create_poetry_project(self) -> None:
         if not self.path.exists():
             self.path.mkdir(parents=True)
             proc = await create_subprocess_shell(
-                f"""poetry init --name=plugin-test --python=">=3.9,<4.0" -n""",
+                f'poetry init --name=plugin-test --python="{self.python}" -n',
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=self.path,
@@ -297,9 +287,7 @@ class PluginTest:
 async def main():
     # 测试插件
     test = PluginTest(
-        "dist/nonebot_plugin_mystool-*-py3-none-any.whl",
-        "nonebot_plugin_mystool",
-        "",
+        "nonebot_plugin_mystool"
     )
     return await test.run()
 
