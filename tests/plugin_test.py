@@ -215,10 +215,7 @@ class PluginTest:
         if not self.path.exists():
             self.path.mkdir(parents=True)
             proc = await create_subprocess_shell(
-                "poetry init -n --name plugin-test"
-                " && cat pyproject.toml"
-                " && poetry env info --ansi"
-                f" && poetry add {self.whl_path}",
+                f"""poetry init -n --name=plugin-test && sed -i "s/\\^/~/g" pyproject.toml && poetry env info --ansi && poetry add {self.whl_path}""",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=self.path,
