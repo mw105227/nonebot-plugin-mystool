@@ -23,9 +23,8 @@ except ImportError:
     Logger = None
     pass
 
-from nonebot import Adapter, Bot, require
+from nonebot import Adapter, Bot
 
-require("nonebot_plugin_saa")
 from nonebot_plugin_saa import MessageSegmentFactory, Text, AggregatedMessageFactory, TargetQQPrivate, \
     TargetQQGuildDirect, enable_auto_select_bot
 
