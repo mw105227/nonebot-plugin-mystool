@@ -37,6 +37,7 @@ jobs:
         uses: ./.github/actions/setup-python
         with:
           python-version: "3.11"
+
       - name: Test Plugin
         id: plugin-test
         run: |
