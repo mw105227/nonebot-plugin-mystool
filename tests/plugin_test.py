@@ -392,4 +392,4 @@ async def main():
 
 if __name__ == "__main__":
     is_success, _ = run(main())
-    exit(is_success)
+    exit(not is_success)
