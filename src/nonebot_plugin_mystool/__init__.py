@@ -1,6 +1,9 @@
 from nonebot import require
 from nonebot.plugin import PluginMetadata
 
+require("nonebot_plugin_saa")
+require("nonebot_plugin_apscheduler")
+
 from . import _version
 
 __version__ = _version.__version__
@@ -31,10 +34,6 @@ __plugin_meta__ = PluginMetadata(
     "\n\n⚠️你的数据将经过机器人服务器，请确定你信任服务器所有者再使用。",
     extra={"version": __version__}
 )
-
-require("nonebot_plugin_saa")
-# noinspection SpellCheckingInspection
-require("nonebot_plugin_apscheduler")
 
 # 升级 V1 版本插件数据文件
 
