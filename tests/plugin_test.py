@@ -383,8 +383,8 @@ class PluginTest:
 async def main():
     # 测试插件
     test = PluginTest(
-        "nonebot-plugin-dg-lab-play",
-        "nonebot_plugin_dg_lab_play",
+        "nonebot-plugin-mystool",
+        "nonebot_plugin_mystool",
         "",
     )
     await test.run()
