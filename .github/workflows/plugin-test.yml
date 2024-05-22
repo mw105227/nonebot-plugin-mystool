@@ -1,0 +1,42 @@
+name: Nonebot Plugin Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master" ]
+    paths:
+      - ".github/actions/setup-python/**"
+      - ".github/workflows/plugin-test.yml"
+      - "src/nonebot_plugin_mystool/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - ".github/actions/setup-python/**"
+      - ".github/workflows/plugin-test.yml"
+      - "src/nonebot_plugin_mystool/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+
+jobs:
+  plugin_test:
+    runs-on: ubuntu-latest
+    name: nonebot2 plugin test
+    permissions:
+      issues: read
+    outputs:
+      result: ${{ steps.plugin-test.outputs.RESULT }}
+      output: ${{ steps.plugin-test.outputs.OUTPUT }}
+      metadata: ${{ steps.plugin-test.outputs.METADATA }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python
+        with:
+          python-version: "3.11"
+
+      - name: Test Plugin
+        id: plugin-test
+        run: |
+          poetry run python -m tests.plugin_test
