@@ -167,7 +167,7 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
                     if k_u == 'name':
                         count += 1
                         msg += f"\n{count}. {str(v_u)}"
-        msg += f"\n发送“添加账号”或已有账号名称进行添加/修改"
+        msg += "\n发送“添加账号”或已有账号名称进行添加/修改"
         msg += "\n\n🚪发送“退出”即可退出"
         await account_setting.send(msg)
         state["setting_item"] = "weibo_value"
