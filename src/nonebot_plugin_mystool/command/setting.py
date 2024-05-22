@@ -6,7 +6,7 @@ from nonebot.matcher import Matcher
 from nonebot.params import T_State
 
 from ..api import BaseMission
-from ..api.weibo import tool
+from ..api.weibo import Tool
 from ..command.common import CommandRegistry
 from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage, UserData
 from ..utils import COMMAND_BEGIN, GeneralMessageEvent
@@ -283,7 +283,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
     # 做区分，以下应用在用户数据中，而非米游社数据中
     user: UserData = state["user"]
     if state["setting_item"] == "setting_weibo_value":
-        userdata_dict = tool.Weibo_UserDict(setting_value)
+        userdata_dict = Tool.weibo_user_dict(setting_value)
         if len(user.weibo) > 0:
             for usr in user.weibo:
                 if usr['name'] == userdata_dict['name']:
