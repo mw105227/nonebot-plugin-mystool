@@ -12,7 +12,7 @@ from . import _version
 
 __version__ = _version.__version__
 __plugin_meta__ = PluginMetadata(
-    name=f"米游社小助手插件\n",
+    name="米游社小助手插件\n",
     description="米游社工具-每日米游币任务、游戏签到、商品兑换、免抓包登录\n",
     type="application",
     homepage="https://github.com/Ljzd-PRO/nonebot-plugin-mystool",
