@@ -315,7 +315,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
     # 做区分，以下应用在用户数据中，而非米游社数据中
     elif state["setting_item"] == "setting_weibo_account":
         user: UserData = state["user"]
-        userdata_dict = tool.Weibo_UserDict(setting_value)
+        userdata_dict = Tool.Weibo_UserDict(setting_value)
         if len(user.weibo) > 0:
             for usr in user.weibo:
                 if usr['name'] == userdata_dict['name']:
