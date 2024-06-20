@@ -256,13 +256,15 @@ class WeiboSign:
                     async with httpx.AsyncClient() as client:
                         res = await client.get(url, headers=headers, params=params_copy, timeout=10)
                     res_data = json.loads(res.text)
-                    if 'msg' in res_data and 'errmsg' not in res_data:  # 今日首次签到成功
+                    # if 'msg' in res_data and 'errmsg' not in res_data:      # 今日首次签到成功                
+                    if res_data['result'] == '1':
                         msg += f"{ch['title_sub']}  ✅\n"
-                    elif 'errmsg' in res_data:  # 签到出错
+                    # elif 'errmsg' in res_data :                             # 签到出错
+                    else:
                         # msg = f"{res_data['errmsg']}\n"
                         msg += f"{ch['title_sub']}  ❌\n"
-                        msg += f"--{res_data['errmsg']}\n"
-                elif ch['is_sign'] == '已签':  # 今日再次进行签到，且之前已经签到成功
+                        msg += f"--{res_data['errmsg'] if res_data['errmsg'] else res_data['msg']}\n"
+                elif ch['is_sign'] == '已签':                               # 今日再次进行签到，且之前已经签到成功
                     msg += f"{ch['title_sub']}  ✅\n"
             return msg
         except Exception as e:
