@@ -248,7 +248,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_wb=ArgStr()):
             await account_setting.send(
                 "更新账号：\n"
                 "  cookie必填SUB,SUBP\n"
-                "  params必填s,gsid,aid,from\n"
+                "  params必填s,gsid,aid,from,c\n"
                 "  参数以 ; 相连\n"
                 "  如 xxx: a=x;b=x;\n"
                 "发送以下格式进行添加：\n"
