@@ -256,14 +256,14 @@ class WeiboSign:
                     async with httpx.AsyncClient() as client:
                         res = await client.get(url, headers=headers, params=params_copy, timeout=10)
                     res_data = json.loads(res.text)
-                    if 'msg' in res_data and 'errmsg' not in res_data:  # 今日首次签到成功
+                    logger.info(f'微博签到返回：{res_data}')
+                    if str(res_data.get('result')) == '1':                    # 今日首次签到成功      
                         msg += f"{ch['title_sub']}  ✅\n"
-                    elif 'errmsg' in res_data:  # 签到出错
-                        # msg = f"{res_data['errmsg']}\n"
+                    else:                                                     # 签到出错
                         msg += f"{ch['title_sub']}  ❌\n"
-                        msg += f"--{res_data['errmsg']}\n"
-                elif ch['is_sign'] == '已签':  # 今日再次进行签到，且之前已经签到成功
+                        msg += f"--{res_data['errmsg'] if res_data.get('errmsg') else res_data['msg']}\n"
+                elif ch['is_sign'] == '已签':                                 # 今日再次进行签到，且之前已经签到成功
                     msg += f"{ch['title_sub']}  ✅\n"
             return msg
         except Exception as e:
-            return f'签到失败请重新签到,{e}'
+            return f'签到失败请重新签到,{type(e).__name__}:{e}'
