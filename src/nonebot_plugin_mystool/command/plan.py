@@ -678,13 +678,18 @@ async def weibo_sign_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     :param user_ids: 发送通知的所有用户ID
     :param matcher: nonebot ``Matcher``
     """
-    for user_data in user.weibo:
-        msg = await WeiboSign.sign(user_data)
+    if user.enable_weibo:
+        for user_data in user.weibo:
+            msg = await WeiboSign.sign(user, user_data)
+            if matcher:
+                await matcher.send(message=msg)
+            else:
+                for user_id in user_ids:
+                    await send_private_msg(user_id=user_id, message=msg)
+    else:
+        message = "未开启微博自动签到功能"
         if matcher:
-            await matcher.send(message=msg)
-        else:
-            for user_id in user_ids:
-                await send_private_msg(user_id=user_id, message=msg)
+            await matcher.send(message)
 
 
 async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Matcher = None):
@@ -724,7 +729,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
                         logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
                         await send_private_msg(user_id=user_id, message=messages)
     else:
-        message = "未开启微博功能"
+        message = "未开启微博兑换功能"
         if matcher:
             await matcher.send(message)
 
