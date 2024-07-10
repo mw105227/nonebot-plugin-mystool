@@ -707,7 +707,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matc
             msg, img = None, None
             start = True
             weibo = WeiboCode(user_data)
-            ticket_id = await weibo.get_ticket_id()
+            ticket_id = await weibo.get_ticket_id
             if mode == 1:
                 if isinstance(ticket_id, dict):
                     await weibo_sign_check(user=user, user_ids=user_ids)
