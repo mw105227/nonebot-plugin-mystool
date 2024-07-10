@@ -54,7 +54,8 @@ class WeiboCode:
         """params: s=xxxxxx; gsid=xxxxxx; aid=xxxxxx; from=xxxxxx"""
         self.cookie = Tool.cookie_to_dict(user_data['cookie'])
         self.container_id = {'原神': '100808fc439dedbb06ca5fd858848e521b8716',
-                             '崩铁': '100808e1f868bf9980f09ab6908787d7eaf0f0'}
+                             '崩铁': '100808e1f868bf9980f09ab6908787d7eaf0f0',
+                             '绝区零': '100808f303ad099b7730ad1f96ff49726d3ff3'}
         self.ua = 'WeiboOverseas/4.4.6 (iPhone; iOS 14.0.1; Scale/2.00)'
         self.headers = {'User-Agent': self.ua}
         self.follow_data_url = 'https://api.weibo.cn/2/cardlist'
