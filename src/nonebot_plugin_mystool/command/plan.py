@@ -680,7 +680,7 @@ async def weibo_sign_check(user: UserData, user_ids: Iterable[str], matcher: Mat
     """
     if user.enable_weibo:
         for user_data in user.weibo:
-            msg = await WeiboSign.sign(user, user_data)
+            msg = await WeiboSign.sign(user_data)
             if matcher:
                 await matcher.send(message=msg)
             else:
@@ -692,7 +692,7 @@ async def weibo_sign_check(user: UserData, user_ids: Iterable[str], matcher: Mat
             await matcher.send(message)
 
 
-async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Matcher = None):
+async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matcher: Matcher = None):
     """
     是否开启微博兑换码功能的函数，并发送给用户任务执行消息。
 
@@ -705,29 +705,37 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], matcher: Mat
         # account = UserAccount(account) 
         for user_data in user.weibo:
             msg, img = None, None
+            start = True
             weibo = WeiboCode(user_data)
-            result = await weibo.get_code_list()
-            try:
-                if isinstance(result, tuple):
-                    msg, img = result
+            ticket_id = await weibo.get_ticket_id()
+            if mode == 1:
+                if isinstance(ticket_id, dict):
+                    await weibo_sign_check(user=user, user_ids=user_ids)
                 else:
-                    msg = result
-            except Exception:
-                pass
-            if matcher:
-                if img:
-                    onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
-                    messages = msg + onebot_img_msg
+                    start = False
+            if start:
+                result = await weibo.get_code_list(ticket_id)
+                try:
+                    if isinstance(result, tuple):
+                        msg, img = result
+                    else:
+                        msg = result
+                except Exception:
+                    pass
+                if matcher:
+                    if img:
+                        onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
+                        messages = msg + onebot_img_msg
+                    else:
+                        messages = msg
+                    await matcher.send(messages)
                 else:
-                    messages = msg
-                await matcher.send(messages)
-            else:
-                if img and '无' not in msg:
-                    saa_img = Image(await get_file(img))
-                    messages = msg + saa_img
-                    for user_id in user_ids:
-                        logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
-                        await send_private_msg(user_id=user_id, message=messages)
+                    if img and '无' not in msg:
+                        saa_img = Image(await get_file(img))
+                        messages = msg + saa_img
+                        for user_id in user_ids:
+                            logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
+                            await send_private_msg(user_id=user_id, message=messages)
     else:
         message = "未开启微博兑换功能"
         if matcher:
@@ -785,6 +793,6 @@ async def auto_weibo_check():
     logger.info(f"{plugin_config.preference.log_head}开始执行微博自动任务")
     for user_id, user in get_unique_users():
         user_ids = [user_id] + list(get_all_bind(user_id))
-        await weibo_sign_check(user=user, user_ids=user_ids)
-        await weibo_code_check(user=user, user_ids=user_ids)
+        # await weibo_sign_check(user=user, user_ids=user_ids)
+        await weibo_code_check(user=user, user_ids=user_ids, mode=1)
     logger.info(f"{plugin_config.preference.log_head}微博自动任务执行完成")
