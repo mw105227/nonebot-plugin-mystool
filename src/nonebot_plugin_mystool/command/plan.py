@@ -714,28 +714,30 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matc
                 else:
                     start = False
             if start:
-                result = await weibo.get_code_list(ticket_id)
                 try:
-                    if isinstance(result, tuple):
-                        msg, img = result
-                    else:
-                        msg = result
+                    for key, value in ticket_id.items():
+                        one_id = {key:value}
+                        result = await weibo.get_code_list(one_id)
+                        if isinstance(result, tuple):
+                            msg, img = result
+                        else:
+                            msg = result
+                        if matcher:
+                            if img:
+                                onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
+                                messages = msg + onebot_img_msg
+                            else:
+                                messages = msg
+                            await matcher.send(messages)
+                        else:
+                            if img and '无' not in msg:
+                                saa_img = Image(await get_file(img))
+                                messages = msg + saa_img
+                                for user_id in user_ids:
+                                    logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
+                                    await send_private_msg(user_id=user_id, message=messages)
                 except Exception:
                     pass
-                if matcher:
-                    if img:
-                        onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
-                        messages = msg + onebot_img_msg
-                    else:
-                        messages = msg
-                    await matcher.send(messages)
-                else:
-                    if img and '无' not in msg:
-                        saa_img = Image(await get_file(img))
-                        messages = msg + saa_img
-                        for user_id in user_ids:
-                            logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
-                            await send_private_msg(user_id=user_id, message=messages)
     else:
         message = "未开启微博兑换功能"
         if matcher:

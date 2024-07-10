@@ -135,7 +135,7 @@ class WeiboCode:
                        "\n2️⃣" \
                        f"  \n{values[1]}" \
                        "\n3️⃣" \
-                       f"  \n{values[2]}"
+                       f"  \n{values[2]}\n"
             return msg, img
         else:
             return ticket_id
