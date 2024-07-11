@@ -305,18 +305,16 @@ async def perform_game_sign(
                               f"\n{award.name} * {award.cnt}" \
                               f"\n\n📅本月签到次数：{info.total_sign_day}"
                         img_file = await get_file(award.icon)
-                        if img_file:
-                            # onebot_img_msg = OneBotV11MessageSegment.image(img_file)
-                            saa_img = Image(img_file)
-                            qq_guild_img_msg = QQGuildMessageSegment.file_image(img_file)
+                        onebot_img_msg = OneBotV11MessageSegment.image(img_file)
+                        saa_img = Image(img_file)
+                        qq_guild_img_msg = QQGuildMessageSegment.file_image(img_file)
                     else:
                         msg = (f"⚠️账户 {account.display_name} 🎮『{signer.name}』签到失败！请尝试重新签到，"
                                "若多次失败请尝试重新登录绑定账户")
                 if matcher:
                     try:
                         if isinstance(event, OneBotV11MessageEvent):
-                            # await matcher.send(msg + onebot_img_msg)
-                            await matcher.send(msg)
+                            await matcher.send(msg + onebot_img_msg)
                         elif isinstance(event, QQGuildMessageEvent):
                             await matcher.send(msg)
                             await matcher.send(qq_guild_img_msg)
