@@ -270,7 +270,7 @@ class WeiboSign:
                         res_data = json.loads(res.text)
                         logger.info(f'微博签到返回：{res_data}')
                         if str(res_data.get('result')) == '402004':
-                            msg += f'点击链接进行验证后再次签到\n'
+                            msg += '点击链接进行验证后再次签到\n'
                             msg += res_data.get('scheme')
                             is_geetest = True
                             break
