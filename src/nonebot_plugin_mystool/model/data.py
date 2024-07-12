@@ -378,6 +378,7 @@ class UserData(BaseModelWithSetter):
         "TearsOfThemis",
         "StarRail",
         "ZenlessZoneZero"]
+    '''允许签到的游戏列表'''
     geetest_url: Optional[str]
     '''极验Geetest人机验证打码接口URL'''
     geetest_params: Optional[Dict[str, Any]] = None
