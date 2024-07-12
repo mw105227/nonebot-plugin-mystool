@@ -245,6 +245,8 @@ async def perform_game_sign(
                 continue
             else:
                 games_has_record.append(signer)
+                if class_type.en_name not in user.enable_GameSign:
+                    continue
             get_info_status, info = await signer.get_info(account.platform)
             if not get_info_status:
                 if matcher:
