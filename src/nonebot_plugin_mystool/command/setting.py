@@ -208,6 +208,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             state["setting_item"] = "setting_notice_value_sr"
         else:
             await account_setting.reject("⚠️您的输入有误，请重新输入")
+        state["setting_wb"] = ""
 
 
 @account_setting.got('setting_wb')
