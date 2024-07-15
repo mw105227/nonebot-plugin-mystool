@@ -718,7 +718,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matc
             if start:
                 try:
                     for key, value in ticket_id.items():
-                        one_id = {key:value}
+                        one_id = {key: value}
                         result = await weibo.get_code_list(one_id)
                         if isinstance(result, tuple):
                             msg, img = result

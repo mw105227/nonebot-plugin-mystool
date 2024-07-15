@@ -208,13 +208,14 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, notice_game=ArgStr())
             state["setting_item"] = "setting_notice_value_sr"
         else:
             await account_setting.reject("⚠️您的输入有误，请重新输入")
-    
+        state["setting_wb"] = ""
+
 
 @account_setting.got('setting_wb')
 async def _(_: Union[GeneralMessageEvent], state: T_State, setting_wb=ArgStr()):
     if setting_wb == '退出':
         await account_setting.finish('🚪已成功退出')
-    
+
     if state["setting_item"] == "setting_wbitem":
         user: UserData = state["user"]
         if setting_wb == "1":
@@ -326,7 +327,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
             user.weibo.append(userdata_dict)
         PluginDataManager.write_plugin_data()
         await account_setting.finish(f"{userdata_dict['name']}微博账号设置成功")
-    
+
     elif state["setting_item"] == "del_weibo_account":
         user: UserData = state["user"]
         if len(user.weibo) > 0:
@@ -336,7 +337,6 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
                     user.weibo.remove(usr)
             PluginDataManager.write_plugin_data()
             await account_setting.finish(f"{setting_value}微博账号成功删除")
-
 
 
 global_setting = on_command(plugin_config.preference.command_start + '通知设置', priority=5, block=True)

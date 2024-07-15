@@ -12,7 +12,7 @@ from ..utils import logger, generate_ds, \
     get_async_retry
 
 __all__ = ["BaseGameSign", "GenshinImpactSign", "HonkaiImpact3Sign", "HoukaiGakuen2Sign", "TearsOfThemisSign",
-           "StarRailSign"]
+           "StarRailSign", "ZenlessZoneZeroSign"]
 
 
 class BaseGameSign:

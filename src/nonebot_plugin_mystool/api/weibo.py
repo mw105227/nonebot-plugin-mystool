@@ -1,8 +1,8 @@
 import copy
 import json
-import time
 import random
 import re
+import time
 from datetime import date
 from urllib.parse import unquote
 
@@ -110,14 +110,14 @@ class WeiboCode:
 
     async def get_code_list(self, ticket_id):
         # ticket_id = await self.get_ticket_id  # 有活动则返回一个dict，没活动则返回一个str
-        '''
+        """
         ticket_id = {
             '原神/崩铁': {
                 'id': [],
                 'img': ''
             }
         }
-        '''
+        """
         if isinstance(ticket_id, dict):
             msg = ""
             code = {key: [] for key in ticket_id.keys()}
@@ -264,13 +264,13 @@ class WeiboSign:
                     params_copy['request_url'] = request_url.format(containerid=ch['id'])
                     params_copy['ul_ctime'] = int(time.time() * 1000)
                     pd = True
-                    while pd :
+                    while pd:
                         async with httpx.AsyncClient() as client:
                             res = await client.get(url, headers=headers, cookies=cookie, params=params_copy, timeout=10)
                         res_data = json.loads(res.text)
                         logger.info(f'微博签到返回：{res_data}')
                         if str(res_data.get('result')) == '402004':
-                            msg += f'点击链接进行验证后再次签到\n'
+                            msg += '点击链接进行验证后再次签到\n'
                             msg += res_data.get('scheme')
                             is_geetest = True
                             break
@@ -283,7 +283,7 @@ class WeiboSign:
                             msg += f"{ch['title_sub']}  ❌\n"
                             msg += f"--{res_data['errmsg'] if res_data.get('errmsg') else res_data['msg']}\n"
                             pd = False
-                elif ch['is_sign'] == '已签':                               # 今日再次进行签到，且之前已经签到成功
+                elif ch['is_sign'] == '已签':  # 今日再次进行签到，且之前已经签到成功
                     msg += f"{ch['title_sub']}  ✅\n"
             return msg
         except Exception as e:
