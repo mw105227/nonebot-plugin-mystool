@@ -30,6 +30,6 @@
 
 - V2 (`>=v2.0.0`) 的相关文件为 _`configV2.json`, `dataV2.json`, `.env`_，如果存在 V1 版本的文件，**会自动备份和升级**
 - V1 (`>=v1.0.0, <v2.0.0`) 插件配置/数据文件为 _`plugin_data.json`_
-- `< v1.0.0` 插件配置文件为 _`pluginConfig.json`_
+- `<v1.0.0` 插件配置文件为 _`pluginConfig.json`_
 
 **Full Changelog**: https://github.com/Ljzd-PRO/nonebot-plugin-mystool/compare/v2.6.0…v2.6.1
