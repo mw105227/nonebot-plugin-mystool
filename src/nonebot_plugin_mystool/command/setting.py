@@ -85,8 +85,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, state: T_State,
     # 筛选出用户数据中的missionGame对应的游戏全称
     user_setting += "\n\n3️⃣ 执行签到的游戏：" + \
                     "\n- " + "、".join(
-    f"『{next((game.name for game in BaseGameSign.available_game_signs if game.en_name == game_id), 'N/A')}』"
-    for game_id in account.enable_GameSign
+        f"『{next((game.name for game in BaseGameSign.available_game_signs if game.en_name == game_id), 'N/A')}』"
+        for game_id in account.game_sign_games
     )
 
     platform_show = "iOS" if account.platform == "ios" else "安卓"
@@ -319,7 +319,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
         games_input = setting_value.split()
         sign_games = []
         for game in games_input:
-            subclass_filter = filter(lambda x: x.name == game,  BaseGameSign.available_game_signs)
+            subclass_filter = filter(lambda x: x.name == game, BaseGameSign.available_game_signs)
             subclass_pair = next(subclass_filter, None)
             if subclass_pair is None:
                 await account_setting.reject("⚠️您的输入有误，请重新输入")
@@ -327,7 +327,7 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
                 game_name = subclass_pair.en_name
                 sign_games.append(game_name)
 
-        account.enable_GameSign = sign_games
+        account.game_sign_games = sign_games
         PluginDataManager.write_plugin_data()
         setting_value = setting_value.replace(" ", "、")
         await account_setting.finish(f"💬执行签到的游戏已更改为『{setting_value}』")
