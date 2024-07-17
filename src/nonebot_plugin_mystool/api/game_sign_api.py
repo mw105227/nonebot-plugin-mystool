@@ -19,10 +19,10 @@ class BaseGameSign:
     """
     游戏签到基类
     """
-    name = ""
+    name: str
     """游戏名字"""
-
-    act_id = ""
+    en_name: str
+    act_id: str
     url_reward = "https://api-takumi.mihoyo.com/event/luna/home"
     url_info = "https://api-takumi.mihoyo.com/event/luna/info"
     url_sign = "https://api-takumi.mihoyo.com/event/luna/sign"
@@ -37,7 +37,7 @@ class BaseGameSign:
         "Referer": "https://webstatic.mihoyo.com/",
         "Accept-Encoding": "gzip, deflate, br"
     }
-    game_id = 0
+    game_id = int
 
     available_game_signs: Set[Type["BaseGameSign"]] = set()
     """可用的子类"""
