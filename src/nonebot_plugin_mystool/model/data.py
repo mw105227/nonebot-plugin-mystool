@@ -242,6 +242,14 @@ class UserAccount(BaseModelWithSetter):
     '''是否开启便笺提醒'''
     platform: Literal["ios", "android"] = "ios"
     '''设备平台'''
+    enable_GameSign: list[str] = [
+        "GenshinImpact",
+        "HonkaiImpact3",
+        "HoukaiGakuen2",
+        "TearsOfThemis",
+        "StarRail",
+        "ZenlessZoneZero"]
+    '''允许签到的游戏列表'''
     mission_games: List[str] = ["BBSMission"]
     '''在哪些板块执行米游币任务计划 为 BaseMission 子类名称'''
     user_stamina_threshold: int = 240
@@ -371,14 +379,6 @@ class UserData(BaseModelWithSetter):
     '''是否开启微博功能'''
     weibo: list = []
     '''微博超话签到及兑换用的参数,适配多账号'''
-    enable_GameSign: list[str] = [
-        "GenshinImpact",
-        "HonkaiImpact3",
-        "HoukaiGakuen2",
-        "TearsOfThemis",
-        "StarRail",
-        "ZenlessZoneZero"]
-    '''允许签到的游戏列表'''
     geetest_url: Optional[str]
     '''极验Geetest人机验证打码接口URL'''
     geetest_params: Optional[Dict[str, Any]] = None
