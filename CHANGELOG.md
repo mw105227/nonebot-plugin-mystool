@@ -34,4 +34,4 @@
 - V1 (`>=v1.0.0, <v2.0.0`) 插件配置/数据文件为 _`plugin_data.json`_
 - `<v1.0.0` 插件配置文件为 _`pluginConfig.json`_
 
-**Full Changelog**: https://github.com/Ljzd-PRO/nonebot-plugin-mystool/compare/v2.6.0…v2.6.1
+**Full Changelog**: https://github.com/Ljzd-PRO/nonebot-plugin-mystool/compare/v2.6.0…v2.7.0
