@@ -5,7 +5,7 @@ from nonebot.internal.params import ArgStr
 from nonebot.matcher import Matcher
 from nonebot.params import T_State
 
-from ..api import BaseMission
+from ..api import BaseMission, BaseGameSign
 from ..api.weibo import Tool
 from ..command.common import CommandRegistry
 from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage, UserData
@@ -124,6 +124,16 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         PluginDataManager.write_plugin_data()
         await account_setting.finish(f"📅米哈游游戏自动签到已 {'✅开启' if account.enable_game_sign else '❌关闭'}")
     elif setting_id == '3':
+        signable_games = "、".join(map(lambda x: f"『{x.name}』", BaseMission.available_games.values()))
+        await account_setting.send(
+            "请发送你想要执行米游币任务的频道："
+            "\n❕多个频道请用空格分隔，如 “原神 崩坏3 综合”"
+            "\n\n可选的频道："
+            f"\n- {games_show}"
+            "\n\n🚪发送“退出”即可退出"
+        )
+        state["setting_item"] = "sign_games"
+    elif setting_id == '4':
         if account.platform == "ios":
             account.platform = "android"
             platform_show = "安卓"
@@ -132,21 +142,21 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
             platform_show = "iOS"
         PluginDataManager.write_plugin_data()
         await account_setting.finish(f"📲设备平台已更改为 {platform_show}")
-    elif setting_id == '4':
-        games_show = "、".join(map(lambda x: f"『{x.name}』", BaseMission.available_games.values()))
+    elif setting_id == '5':
+        games_show = "、".join(map(lambda x: f"『{x.name}』", BaseGameSign.available_game_signs.values()))
         await account_setting.send(
-            "请发送你想要执行米游币任务的频道："
-            "\n❕多个频道请用空格分隔，如 “原神 崩坏3 综合”"
-            "\n\n可选的频道："
+            "请发送你想要签到的游戏："
+            "\n❕多个游戏请用空格分隔，如 “原神 崩坏3 综合”"
+            "\n\n可选的游戏："
             f"\n- {games_show}"
             "\n\n🚪发送“退出”即可退出"
         )
         state["setting_item"] = "mission_games"
-    elif setting_id == '5':
+    elif setting_id == '6':
         account.enable_resin = not account.enable_resin
         PluginDataManager.write_plugin_data()
         await account_setting.finish(f"📅原神、星穹铁道便笺提醒已 {'✅开启' if account.enable_resin else '❌关闭'}")
-    elif setting_id == '6':
+    elif setting_id == '7':
         await account_setting.send(
             "请发送想要修改体力提醒阈值的游戏编号："
             "\n1. 原神"
@@ -155,7 +165,7 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         )
         state["setting_item"] = "setting_notice_value"
         return
-    elif setting_id == "7":
+    elif setting_id == "8":
         user: UserData = state["user"]
         msg = ""
         msg += "请发送想要设置的微博功能开关或账号："
@@ -174,7 +184,7 @@ async def _(event: Union[GeneralMessageEvent], state: T_State, setting_id=ArgStr
         state["setting_item"] = "setting_wbitem"
         state["notice_game"] = ""
         return
-    elif setting_id == '8':
+    elif setting_id == '9':
         state["prepare_to_delete"] = True
         await account_setting.reject(f"⚠️确认删除账号 {account.display_name} ？发送 \"确认删除\" 以确定。")
     elif setting_id == '确认删除' and state["prepare_to_delete"]:
@@ -295,6 +305,24 @@ async def _(_: Union[GeneralMessageEvent], state: T_State, setting_value=ArgStr(
                                              f"⏰当前提醒阈值：{stamina_threshold}")
             else:
                 await account_setting.reject("⚠️输入的数字范围应在 0 到 240 之间。")
+
+
+    elif state["setting_item"] == "sign_games":
+        games_input = setting_value.split()
+        sign_games = []
+        for game in games_input:
+            subclass_filter = filter(lambda x: x[1].name == game,  BaseGameSign.available_game_signs.items())
+            subclass_pair = next(subclass_filter, None)
+            if subclass_pair is None:
+                await account_setting.reject("⚠️您的输入有误，请重新输入")
+            else:
+                game_name, _ = subclass_pair
+                sign_games.append(game_name)
+
+        account.enable_GameSign = sign_games
+        PluginDataManager.write_plugin_data()
+        setting_value = setting_value.replace(" ", "、")
+        await account_setting.finish(f"💬执行签到的游戏已更改为『{setting_value}』")
 
     elif state["setting_item"] == "mission_games":
         games_input = setting_value.split()
