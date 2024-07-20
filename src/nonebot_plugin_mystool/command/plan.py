@@ -498,7 +498,7 @@ async def genshin_note_check(user: UserData, user_ids: Iterable[str], matcher: M
     for account in user.accounts.values():
         note_notice_status.setdefault(account.bbs_uid, NoteNoticeStatus())
         genshin_notice = note_notice_status[account.bbs_uid].genshin
-        if account.enable_resin or matcher:
+        if (account.enable_resin and 'GenshinImpact' in account.game_sign_games) or matcher:
             genshin_board_status, note = await genshin_note(account)
             if not genshin_board_status:
                 if matcher:
@@ -586,7 +586,7 @@ async def starrail_note_check(user: UserData, user_ids: Iterable[str], matcher: 
     for account in user.accounts.values():
         note_notice_status.setdefault(account.bbs_uid, NoteNoticeStatus())
         starrail_notice = note_notice_status[account.bbs_uid].starrail
-        if account.enable_resin or matcher:
+        if (account.enable_resin and 'StarRail' in account.game_sign_games) or matcher:
             starrail_board_status, note = await starrail_note(account)
             if not starrail_board_status:
                 if matcher:
