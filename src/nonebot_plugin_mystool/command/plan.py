@@ -4,7 +4,8 @@ from typing import Union, Optional, Iterable, Dict
 
 from nonebot import on_command, get_adapters
 from nonebot.adapters.onebot.v11 import MessageSegment as OneBotV11MessageSegment, Adapter as OneBotV11Adapter, \
-    MessageEvent as OneBotV11MessageEvent, Bot
+    MessageEvent as OneBotV11MessageEvent, GroupMessageEvent as OneBotV11GroupMessageEvent, \
+    PrivateMessageEvent as OneBotV11PrivateMessageEvent, Bot
 from nonebot.adapters.qq import MessageSegment as QQGuildMessageSegment, Adapter as QQGuildAdapter, \
     MessageEvent as QQGuildMessageEvent
 from nonebot.adapters.qq.exception import AuditException
@@ -231,10 +232,11 @@ async def perform_game_sign(
             continue
         signed = False
         """是否已经完成过签到"""
+        msgs_list = []
         game_record_status, records = await get_game_record(account)
         if not game_record_status:
             if matcher:
-                await matcher.send(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试")
+                await matcher.send(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试", at_sender=True)
             else:
                 for user_id in user_ids:
                     await send_private_msg(
@@ -243,7 +245,7 @@ async def perform_game_sign(
                     )
             continue
         games_has_record = []
-        msgs_list = []
+        
         for class_type in BaseGameSign.available_game_signs:
             signer = class_type(account, records)
             if not signer.has_record:
@@ -255,7 +257,7 @@ async def perform_game_sign(
             get_info_status, info = await signer.get_info(account.platform)
             if not get_info_status:
                 if matcher:
-                    await matcher.send(f"⚠️账户 {account.display_name} 获取签到记录失败")
+                    await matcher.send(f"⚠️账户 {account.display_name} 获取签到记录失败", at_sender=True)
                 else:
                     for user_id in user_ids:
                         await send_private_msg(
@@ -284,7 +286,10 @@ async def perform_game_sign(
                     else:
                         message = f"⚠️账户 {account.display_name} 🎮『{signer.name}』签到失败，请稍后再试"
                     if matcher:
-                        await matcher.send(message)
+                        if isinstance(event, OneBotV11GroupMessageEvent):
+                            msgs_list.append(message)
+                        else:
+                            await matcher.send(message)
                     elif user.enable_notice:
                         for user_id in user_ids:
                             await send_private_msg(user_id=user_id, message=message)
@@ -321,7 +326,7 @@ async def perform_game_sign(
                 if matcher:
                     try:
                         if isinstance(event, OneBotV11MessageEvent):
-                            if event.group_id:
+                            if isinstance(event, OneBotV11GroupMessageEvent):
                                 msgs_list.append(msg + onebot_img_msg)
                             else:
                                 await matcher.send(msg + onebot_img_msg)
@@ -342,10 +347,10 @@ async def perform_game_sign(
             await asyncio.sleep(plugin_config.preference.sleep_time)
         if msgs_list:   #在群聊触发游戏签到将使用合并消息
             def build_forward_msg(msg):
-                return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
                 #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
+                return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
             messages = [build_forward_msg(msg) for msg in msgs_list]
-            await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": event.user_id}})
+            await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": str(event.user_id)}})
             await bot.call_api("send_group_forward_msg", group_id=event.group_id, messages=messages)
 
         if not games_has_record:
