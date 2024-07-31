@@ -216,7 +216,8 @@ async def perform_game_sign(
         user_ids: Iterable[str],
         matcher: Matcher = None,
         bot: Bot = None ,
-        event: Union[GeneralMessageEvent] = None
+        event: Union[GeneralMessageEvent] = None ,
+        msgs_list = None
 ):
     """
     执行游戏签到函数，并发送给用户签到消息。
@@ -233,11 +234,10 @@ async def perform_game_sign(
             continue
         signed = False
         """是否已经完成过签到"""
-        msgs_list = []
         game_record_status, records = await get_game_record(account)
         if not game_record_status:
             if matcher:
-                await matcher.send(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试", at_sender=True)
+                msgs_list.append(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试")
             else:
                 for user_id in user_ids:
                     await send_private_msg(
@@ -258,7 +258,7 @@ async def perform_game_sign(
             get_info_status, info = await signer.get_info(account.platform)
             if not get_info_status:
                 if matcher:
-                    await matcher.send(f"⚠️账户 {account.display_name} 获取签到记录失败", at_sender=True)
+                    msgs_list.append(f"⚠️账户 {account.display_name} 获取签到记录失败")
                 else:
                     for user_id in user_ids:
                         await send_private_msg(
@@ -274,7 +274,7 @@ async def perform_game_sign(
                 if sign_status.need_verify:
                     if plugin_config.preference.geetest_url or user.geetest_url:
                         if matcher:
-                            await matcher.send("⏳正在尝试完成人机验证，请稍后...")
+                            msgs_list.append("⏳正在尝试完成人机验证，请稍后...")
                         geetest_result = await get_validate(user, mmt_data.gt, mmt_data.challenge)
                         sign_status, _ = await signer.sign(account.platform, mmt_data, geetest_result)
 
@@ -287,10 +287,7 @@ async def perform_game_sign(
                     else:
                         message = f"⚠️账户 {account.display_name} 🎮『{signer.name}』签到失败，请稍后再试"
                     if matcher:
-                        if isinstance(event, OneBotV11GroupMessageEvent):
-                            msgs_list.append(message)
-                        else:
-                            await matcher.send(message)
+                        msgs_list.append(message)
                     elif user.enable_notice:
                         for user_id in user_ids:
                             await send_private_msg(user_id=user_id, message=message)
@@ -327,10 +324,7 @@ async def perform_game_sign(
                 if matcher:
                     try:
                         if isinstance(event, OneBotV11MessageEvent):
-                            if isinstance(event, OneBotV11GroupMessageEvent):
-                                msgs_list.append(msg + onebot_img_msg)
-                            else:
-                                await matcher.send(msg + onebot_img_msg)
+                            msgs_list.append(msg + onebot_img_msg)
                         elif isinstance(event, QQGuildMessageEvent):
                             await matcher.send(msg)
                             await matcher.send(qq_guild_img_msg)
@@ -346,13 +340,12 @@ async def perform_game_sign(
                                 await send_private_msg(use=adapter, user_id=user_id, message=msg)
                                 await send_private_msg(use=adapter, user_id=user_id, message=qq_guild_img_msg)
             await asyncio.sleep(plugin_config.preference.sleep_time)
-        if msgs_list:   #在群聊触发游戏签到将使用合并消息
-            def build_forward_msg(msg):
-                #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
-                return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
-            messages = [build_forward_msg(msg) for msg in msgs_list]
-            await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": str(event.user_id)}})
-            await bot.call_api("send_group_forward_msg", group_id=event.group_id, messages=messages)
+        
+        if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+            await qqgroup_msg(bot, event, msgs_list)
+        else:
+            for msg in msgs_list:
+                await matcher.send(msg)
 
         if not games_has_record:
             if matcher:
