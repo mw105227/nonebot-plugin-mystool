@@ -4,7 +4,8 @@ from typing import Union, Optional, Iterable, Dict
 
 from nonebot import on_command, get_adapters
 from nonebot.adapters.onebot.v11 import MessageSegment as OneBotV11MessageSegment, Adapter as OneBotV11Adapter, \
-    MessageEvent as OneBotV11MessageEvent
+    MessageEvent as OneBotV11MessageEvent, GroupMessageEvent as OneBotV11GroupMessageEvent, \
+    PrivateMessageEvent as OneBotV11PrivateMessageEvent, Bot
 from nonebot.adapters.qq import MessageSegment as QQGuildMessageSegment, Adapter as QQGuildAdapter, \
     MessageEvent as QQGuildMessageEvent
 from nonebot.adapters.qq.exception import AuditException
@@ -44,11 +45,12 @@ CommandRegistry.set_usage(
 
 
 @manually_game_sign.handle()
-async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
+async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
     """
     手动游戏签到函数
     """
     user_id = event.get_user_id()
+    logger.info(f'event:{type(event)}|{event}')
     user = PluginDataManager.plugin_data.users.get(user_id)
     if not user or not user.accounts:
         await manually_game_sign.finish(f"⚠️你尚未绑定米游社账户，请先使用『{COMMAND_BEGIN}登录』进行登录")
@@ -62,6 +64,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     for user_id_, user_ in get_unique_users():
                         await manually_game_sign.send(f"⏳开始为用户 {user_id_} 执行游戏签到...")
                         await perform_game_sign(
+                            bot=bot,
                             user=user_,
                             user_ids=[],
                             matcher=matcher,
@@ -73,6 +76,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                         await manually_game_sign.finish(f"⚠️未找到用户 {specified_user_id}")
                     await manually_game_sign.send(f"⏳开始为用户 {specified_user_id} 执行游戏签到...")
                     await perform_game_sign(
+                        bot=bot,
                         user=specified_user,
                         user_ids=[],
                         matcher=matcher,
@@ -80,7 +84,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     )
     else:
         await manually_game_sign.send("⏳开始游戏签到...")
-        await perform_game_sign(user=user, user_ids=[user_id], matcher=matcher, event=event)
+        await perform_game_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event)
 
 
 manually_bbs_sign = on_command(plugin_config.preference.command_start + '任务', priority=5, block=True)
@@ -210,6 +214,7 @@ async def perform_game_sign(
         user: UserData,
         user_ids: Iterable[str],
         matcher: Matcher = None,
+        bot: Bot = None ,
         event: Union[GeneralMessageEvent] = None
 ):
     """
@@ -227,10 +232,11 @@ async def perform_game_sign(
             continue
         signed = False
         """是否已经完成过签到"""
+        msgs_list = []
         game_record_status, records = await get_game_record(account)
         if not game_record_status:
             if matcher:
-                await matcher.send(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试")
+                await matcher.send(f"⚠️账户 {account.display_name} 获取游戏账号信息失败，请重新尝试", at_sender=True)
             else:
                 for user_id in user_ids:
                     await send_private_msg(
@@ -239,6 +245,7 @@ async def perform_game_sign(
                     )
             continue
         games_has_record = []
+        
         for class_type in BaseGameSign.available_game_signs:
             signer = class_type(account, records)
             if not signer.has_record:
@@ -250,7 +257,7 @@ async def perform_game_sign(
             get_info_status, info = await signer.get_info(account.platform)
             if not get_info_status:
                 if matcher:
-                    await matcher.send(f"⚠️账户 {account.display_name} 获取签到记录失败")
+                    await matcher.send(f"⚠️账户 {account.display_name} 获取签到记录失败", at_sender=True)
                 else:
                     for user_id in user_ids:
                         await send_private_msg(
@@ -279,7 +286,10 @@ async def perform_game_sign(
                     else:
                         message = f"⚠️账户 {account.display_name} 🎮『{signer.name}』签到失败，请稍后再试"
                     if matcher:
-                        await matcher.send(message)
+                        if isinstance(event, OneBotV11GroupMessageEvent):
+                            msgs_list.append(message)
+                        else:
+                            await matcher.send(message)
                     elif user.enable_notice:
                         for user_id in user_ids:
                             await send_private_msg(user_id=user_id, message=message)
@@ -316,7 +326,10 @@ async def perform_game_sign(
                 if matcher:
                     try:
                         if isinstance(event, OneBotV11MessageEvent):
-                            await matcher.send(msg + onebot_img_msg)
+                            if isinstance(event, OneBotV11GroupMessageEvent):
+                                msgs_list.append(msg + onebot_img_msg)
+                            else:
+                                await matcher.send(msg + onebot_img_msg)
                         elif isinstance(event, QQGuildMessageEvent):
                             await matcher.send(msg)
                             await matcher.send(qq_guild_img_msg)
@@ -332,6 +345,13 @@ async def perform_game_sign(
                                 await send_private_msg(use=adapter, user_id=user_id, message=msg)
                                 await send_private_msg(use=adapter, user_id=user_id, message=qq_guild_img_msg)
             await asyncio.sleep(plugin_config.preference.sleep_time)
+        if msgs_list:   #在群聊触发游戏签到将使用合并消息
+            def build_forward_msg(msg):
+                #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
+                return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
+            messages = [build_forward_msg(msg) for msg in msgs_list]
+            await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": str(event.user_id)}})
+            await bot.call_api("send_group_forward_msg", group_id=event.group_id, messages=messages)
 
         if not games_has_record:
             if matcher:
@@ -498,7 +518,7 @@ async def genshin_note_check(user: UserData, user_ids: Iterable[str], matcher: M
     for account in user.accounts.values():
         note_notice_status.setdefault(account.bbs_uid, NoteNoticeStatus())
         genshin_notice = note_notice_status[account.bbs_uid].genshin
-        if account.enable_resin or matcher:
+        if (account.enable_resin and 'GenshinImpact' in account.game_sign_games) or matcher:
             genshin_board_status, note = await genshin_note(account)
             if not genshin_board_status:
                 if matcher:
@@ -586,7 +606,7 @@ async def starrail_note_check(user: UserData, user_ids: Iterable[str], matcher: 
     for account in user.accounts.values():
         note_notice_status.setdefault(account.bbs_uid, NoteNoticeStatus())
         starrail_notice = note_notice_status[account.bbs_uid].starrail
-        if account.enable_resin or matcher:
+        if (account.enable_resin and 'StarRail' in account.game_sign_games) or matcher:
             starrail_board_status, note = await starrail_note(account)
             if not starrail_board_status:
                 if matcher:
