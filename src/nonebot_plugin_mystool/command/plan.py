@@ -342,7 +342,7 @@ async def perform_game_sign(
             await asyncio.sleep(plugin_config.preference.sleep_time)
         
         if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
-            await qqgroup_msg(bot, event, msgs_list)
+            await send_qqGroup(bot, event, msgs_list)
         else:
             for msg in msgs_list:
                 await matcher.send(msg)
@@ -502,7 +502,7 @@ async def perform_bbs_sign(
                     await send_private_msg(user_id=user_id, message=msg)
         
         if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
-            await qqgroup_msg(bot, event, msgs_list)
+            await send_qqGroup(bot, event, msgs_list)
         else:
             for msg in msgs_list:
                 await matcher.send(msg)
@@ -772,7 +772,7 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matc
             await matcher.send(message)
 
 
-async def qqgroup_msg(bot, event, msgs_list):
+async def send_qqGroup(bot, event, msgs_list):
     def build_forward_msg(msg):
         #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
         return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
