@@ -99,23 +99,24 @@ CommandRegistry.set_usage(
 
 
 @manually_bbs_sign.handle()
-async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
+async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
     """
     手动米游币任务函数
     """
     user_id = event.get_user_id()
     user = PluginDataManager.plugin_data.users.get(user_id)
+    msgs_list = []
     if not user or not user.accounts:
-        await manually_bbs_sign.finish(f"⚠️你尚未绑定米游社账户，请先使用『{COMMAND_BEGIN}登录』进行登录")
+        await manually_bbs_sign.finish(f"⚠️你尚未绑定米游社账户，请先使用『{COMMAND_BEGIN}登录』进行登录", at_sender=True)
     if command_arg:
         if (specified_user_id := str(command_arg)) == "*" or specified_user_id.isdigit():
             if user_id not in read_admin_list():
                 await manually_bbs_sign.finish("⚠️你暂无权限执行此操作，只有管理员名单中的用户可以执行此操作")
             else:
                 if specified_user_id == "*":
-                    await manually_bbs_sign.send("⏳开始为所有用户执行米游币任务...")
+                    await msgs_list.append("⏳开始为所有用户执行米游币任务...")
                     for user_id_, user_ in get_unique_users():
-                        await manually_bbs_sign.send(f"⏳开始为用户 {user_id_} 执行米游币任务...")
+                        await msgs_list.append(f"⏳开始为用户 {user_id_} 执行米游币任务...")
                         await perform_bbs_sign(
                             user=user_,
                             user_ids=[],
@@ -125,15 +126,15 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
                     if not specified_user:
                         await manually_bbs_sign.finish(f"⚠️未找到用户 {specified_user_id}")
-                    await manually_bbs_sign.send(f"⏳开始为用户 {specified_user_id} 执行米游币任务...")
+                    await msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行米游币任务...")
                     await perform_bbs_sign(
                         user=specified_user,
                         user_ids=[],
                         matcher=matcher
                     )
     else:
-        await manually_bbs_sign.send("⏳开始执行米游币任务...")
-        await perform_bbs_sign(user=user, user_ids=[user_id], matcher=matcher)
+        msgs_list.append("⏳开始执行米游币任务...")
+        await perform_bbs_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event, msgs_list=msgs_list)
 
 
 class NoteNoticeStatus(BaseModel):
@@ -369,7 +370,13 @@ async def perform_game_sign(
         PluginDataManager.write_plugin_data()
 
 
-async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Matcher = None):
+async def perform_bbs_sign(
+        user: UserData, 
+        user_ids: Iterable[str], 
+        matcher: Matcher = None, 
+        bot: Bot = None ,
+        event: Union[GeneralMessageEvent] = None ,
+        msgs_list = None):
     """
     执行米游币任务函数，并发送给用户任务执行消息。
 
@@ -387,7 +394,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
         if not missions_state_status:
             if missions_state_status.login_expired:
                 if matcher:
-                    await matcher.send(f'⚠️账户 {account.display_name} 登录失效，请重新登录')
+                    await matcher.send(f'⚠️账户 {account.display_name} 登录失效，请重新登录', at_sender=True)
                 else:
                     for user_id in user_ids:
                         await send_private_msg(
@@ -395,7 +402,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
                             message=f'⚠️账户 {account.display_name} 登录失效，请重新登录'
                         )
             if matcher:
-                await matcher.send(f'⚠️账户 {account.display_name} 获取任务完成情况请求失败，你可以手动前往App查看')
+                await matcher.send(f'⚠️账户 {account.display_name} 获取任务完成情况请求失败，你可以手动前往App查看', at_sender=True)
             else:
                 for user_id in user_ids:
                     await send_private_msg(
@@ -409,18 +416,18 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
         finished = all(current == mission.threshold for mission, current in missions_state.state_dict.values())
         if not finished:
             if not account.mission_games:
-                await matcher.send(
+                msgs_list.append(
                     f'⚠️🆔账户 {account.display_name} 未设置米游币任务目标分区，将跳过执行')
             for class_name in account.mission_games:
                 class_type = BaseMission.available_games.get(class_name)
                 if not class_type:
                     if matcher:
-                        await matcher.send(
+                        msgs_list.append(
                             f'⚠️🆔账户 {account.display_name} 米游币任务目标分区『{class_name}』未找到，将跳过该分区')
                     continue
                 mission_obj = class_type(account)
                 if matcher:
-                    await matcher.send(f'🆔账户 {account.display_name} ⏳开始在分区『{class_type.name}』执行米游币任务...')
+                    msgs_list.append(f'🆔账户 {account.display_name} ⏳开始在分区『{class_type.name}』执行米游币任务...')
 
                 # 执行任务
                 sign_status, read_status, like_status, share_status = (
@@ -441,7 +448,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
                         share_status = await mission_obj.share()
 
                 if matcher:
-                    await matcher.send(
+                    msgs_list.append(
                         f"🆔账户 {account.display_name} 🎮『{class_type.name}』米游币任务执行情况：\n"
                         f"📅签到：{'✓' if sign_status else '✕'} +{sign_points or '0'} 米游币🪙\n"
                         f"📰阅读：{'✓' if read_status else '✕'}\n"
@@ -455,7 +462,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
             if not missions_state_status:
                 if missions_state_status.login_expired:
                     if matcher:
-                        await matcher.send(f'⚠️账户 {account.display_name} 登录失效，请重新登录')
+                        msgs_list.append(f'⚠️账户 {account.display_name} 登录失效，请重新登录')
                     else:
                         for user_id in user_ids:
                             await send_private_msg(
@@ -464,7 +471,7 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
                             )
                     continue
                 if matcher:
-                    await matcher.send(
+                    msgs_list.append(
                         f'⚠️账户 {account.display_name} 获取任务完成情况请求失败，你可以手动前往App查看')
                 else:
                     for user_id in user_ids:
@@ -496,10 +503,16 @@ async def perform_bbs_sign(user: UserData, user_ids: Iterable[str], matcher: Mat
                    f"\n💰当前米游币: {missions_state.current_myb}"
 
             if matcher:
-                await matcher.send(msg)
+                msgs_list.append(msg)
             else:
                 for user_id in user_ids:
                     await send_private_msg(user_id=user_id, message=msg)
+        
+        if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+            await qqgroup_msg(bot, event, msgs_list)
+        else:
+            for msg in msgs_list:
+                await matcher.send(msg)
 
     # 如果全部登录失效，则关闭通知
     if len(failed_accounts) == len(user.accounts):
@@ -764,6 +777,15 @@ async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matc
         message = "未开启微博兑换功能"
         if matcher:
             await matcher.send(message)
+
+
+async def qqgroup_msg(bot, event, msgs_list):
+    def build_forward_msg(msg):
+        #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
+        return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
+    messages = [build_forward_msg(msg) for msg in msgs_list]
+    await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": str(event.user_id)}})
+    await bot.call_api("send_group_forward_msg", group_id=event.group_id, messages=messages)
 
 
 @scheduler.scheduled_job("cron", hour='0', minute='0', id="daily_goodImg_update")
