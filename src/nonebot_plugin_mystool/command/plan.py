@@ -50,10 +50,10 @@ async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, comman
     手动游戏签到函数
     """
     user_id = event.get_user_id()
-    logger.info(f'event:{type(event)}|{event}')
+    msgs_list = []
     user = PluginDataManager.plugin_data.users.get(user_id)
     if not user or not user.accounts:
-        await manually_game_sign.finish(f"⚠️你尚未绑定米游社账户，请先使用『{COMMAND_BEGIN}登录』进行登录")
+        await manually_game_sign.finish(f"⚠️你尚未绑定米游社账户，请先使用『{COMMAND_BEGIN}登录』进行登录", at_sender=True)
     if command_arg:
         if (specified_user_id := str(command_arg)) == "*" or specified_user_id.isdigit():
             if user_id not in read_admin_list():
@@ -62,7 +62,7 @@ async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, comman
                 if specified_user_id == "*":
                     await manually_game_sign.send("⏳开始为所有用户执行游戏签到...")
                     for user_id_, user_ in get_unique_users():
-                        await manually_game_sign.send(f"⏳开始为用户 {user_id_} 执行游戏签到...")
+                        await msgs_list.append(f"⏳开始为用户 {user_id_} 执行游戏签到...")
                         await perform_game_sign(
                             bot=bot,
                             user=user_,
@@ -73,8 +73,8 @@ async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, comman
                 else:
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
                     if not specified_user:
-                        await manually_game_sign.finish(f"⚠️未找到用户 {specified_user_id}")
-                    await manually_game_sign.send(f"⏳开始为用户 {specified_user_id} 执行游戏签到...")
+                        await manually_game_sign.finish(f"⚠️未找到用户 {specified_user_id}", at_sender=True)
+                    await msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行游戏签到...")
                     await perform_game_sign(
                         bot=bot,
                         user=specified_user,
@@ -83,8 +83,8 @@ async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, comman
                         event=event
                     )
     else:
-        await manually_game_sign.send("⏳开始游戏签到...")
-        await perform_game_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event)
+        msgs_list.append("⏳开始游戏签到...")
+        await perform_game_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event, msgs_list=msgs_list)
 
 
 manually_bbs_sign = on_command(plugin_config.preference.command_start + '任务', priority=5, block=True)
