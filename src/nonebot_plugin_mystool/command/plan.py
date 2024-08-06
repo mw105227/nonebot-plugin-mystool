@@ -2,7 +2,7 @@ import asyncio
 import threading
 from typing import Union, Optional, Iterable, Dict
 
-from nonebot import on_command, get_adapters
+from nonebot import on_command, get_adapters, get_bot
 from nonebot.adapters.onebot.v11 import MessageSegment as OneBotV11MessageSegment, Adapter as OneBotV11Adapter, \
     MessageEvent as OneBotV11MessageEvent, GroupMessageEvent as OneBotV11GroupMessageEvent, \
     PrivateMessageEvent as OneBotV11PrivateMessageEvent, Bot
@@ -45,10 +45,11 @@ CommandRegistry.set_usage(
 
 
 @manually_game_sign.handle()
-async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
+async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
     """
     手动游戏签到函数
     """
+    bot = get_bot()
     user_id = event.get_user_id()
     msgs_list = []
     user = PluginDataManager.plugin_data.users.get(user_id)
@@ -99,10 +100,11 @@ CommandRegistry.set_usage(
 
 
 @manually_bbs_sign.handle()
-async def _(bot:Bot, event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
+async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=CommandArg()):
     """
     手动米游币任务函数
     """
+    bot = get_bot()
     user_id = event.get_user_id()
     user = PluginDataManager.plugin_data.users.get(user_id)
     msgs_list = []
@@ -215,7 +217,7 @@ async def perform_game_sign(
         user: UserData,
         user_ids: Iterable[str],
         matcher: Matcher = None,
-        bot: Bot = None ,
+        bot: Optional[Bot] = None ,
         event: Union[GeneralMessageEvent] = None ,
         msgs_list = None
 ):
@@ -367,7 +369,7 @@ async def perform_bbs_sign(
         user: UserData, 
         user_ids: Iterable[str], 
         matcher: Matcher = None, 
-        bot: Bot = None ,
+        bot: Optional[Bot] = None ,
         event: Union[GeneralMessageEvent] = None ,
         msgs_list = None):
     """
