@@ -343,11 +343,12 @@ async def perform_game_sign(
                                 await send_private_msg(use=adapter, user_id=user_id, message=qq_guild_img_msg)
             await asyncio.sleep(plugin_config.preference.sleep_time)
         
-        if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
-            await send_qqGroup(bot, event, msgs_list)
-        else:
-            for msg in msgs_list:
-                await matcher.send(msg)
+        if msgs_list:
+            if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+                await send_qqGroup(bot, event, msgs_list)
+            else:
+                for msg in msgs_list:
+                    await matcher.send(msg)
 
         if not games_has_record:
             if matcher:
@@ -503,11 +504,12 @@ async def perform_bbs_sign(
                 for user_id in user_ids:
                     await send_private_msg(user_id=user_id, message=msg)
         
-        if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
-            await send_qqGroup(bot, event, msgs_list)
-        else:
-            for msg in msgs_list:
-                await matcher.send(msg)
+        if msgs_list:
+            if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+                await send_qqGroup(bot, event, msgs_list)
+            else:
+                for msg in msgs_list:
+                    await matcher.send(msg)
 
     # 如果全部登录失效，则关闭通知
     if len(failed_accounts) == len(user.accounts):
