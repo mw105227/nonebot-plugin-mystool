@@ -10,15 +10,24 @@ from urllib.parse import unquote
 import httpx
 
 from ..utils import logger
+from ..model import PluginDataManager
 
 
 class Tool:
     @staticmethod
     def cookie_to_dict(cookie):
-        if cookie and '=' in cookie:
-            cookie = dict([line.strip().split('=', 1) for line in cookie.split(';')])
-        return cookie
-
+        if cookie:
+            cookie = dict([line.strip().split('=', 1) if '=' in line else (line.strip(), '') for line in cookie.split(';')])
+            return cookie
+        return {}
+    
+    @classmethod
+    def dict_to_cookie(cls, cookie):
+        print(type(cookie),cookie)
+        if not isinstance(cookie, dict):
+            cookie_dict = cls.cookie_to_dict(cookie)
+        return '; '.join(f'{key}={value}' for key, value in cookie_dict.items())
+    
     @classmethod
     def nested_lookup(cls, obj, key, with_keys=False, fetch_first=False):
         result = list(cls._nested_lookup(obj, key, with_keys=with_keys))
@@ -198,6 +207,24 @@ class WeiboSign:
         return chaohua_list
 
     @classmethod
+    async def update_wbcookies(cls, params_data: dict):
+        try:
+            headers = {
+                'Host': 'api.weibo.cn',
+                'x-engine-type': '114.0.5735.246',
+                'user-agent': 'Mi 10_12_weibo_14.2.2_android',
+            }
+            params_data['ua'] = 'Mi+10_12_WeiboIntlAndroid_6020'
+            async with httpx.AsyncClient() as client:
+                res = await client.get('https://api.weibo.cn/2/account/getcookie', headers=headers, params=params_data)
+            json_res = res.json()['cookie']['.weibo.com'].replace('\n',';')
+            new_cookie = Tool.dict_to_cookie(json_res)
+            return new_cookie
+        except Exception as e:
+            logger.error(f'{type(e)}: {e}')
+            return e
+
+    @classmethod
     async def ch_list(cls, params_data: dict, wb_userdata: dict):
 
         try:
@@ -220,6 +247,8 @@ class WeiboSign:
             json_chdata = res.json()['cards'][0]['card_group']
             list_data = await cls.format_chaohua_data(json_chdata)
             wb_userdata['CHdata_list'] = list_data
+            wb_userdata['cookie'] = await cls.update_wbcookies(params_data)
+            PluginDataManager.write_plugin_data()
             return list_data
         except KeyError:
             return '找不到超话列表'
