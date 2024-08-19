@@ -162,7 +162,7 @@ class BaseMission:
                                             f"米游币任务 - 讨论区签到: 用户 {self.account.display_name} 人机验证通过")
                                         continue
                                 logger.debug(
-                                    f"米游币任务 - 讨论区签到: "
+                                    "米游币任务 - 讨论区签到: "
                                     f"用户 {self.account.display_name} 人机验证失败，geetest_result: {geetest_result}"
                                 )
                         else:
