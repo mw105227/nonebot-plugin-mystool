@@ -152,7 +152,7 @@ class BaseMission:
                         if plugin_config.preference.geetest_url or user.geetest_url:
                             create_status, mmt_data = await create_verification(self.account)
                             logger.debug(
-                                f"米游币任务 - 讨论区签到: "
+                                "米游币任务 - 讨论区签到: "
                                 f"用户 {self.account.display_name} 创建了人机验证任务，mmt_data: {mmt_data}"
                             )
                             if create_status:
