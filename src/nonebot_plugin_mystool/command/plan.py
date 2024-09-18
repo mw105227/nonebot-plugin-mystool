@@ -63,7 +63,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                 if specified_user_id == "*":
                     await manually_game_sign.send("⏳开始为所有用户执行游戏签到...")
                     for user_id_, user_ in get_unique_users():
-                        await msgs_list.append(f"⏳开始为用户 {user_id_} 执行游戏签到...")
+                        msgs_list.append(f"⏳开始为用户 {user_id_} 执行游戏签到...")
                         await perform_game_sign(
                             bot=bot,
                             user=user_,
@@ -75,7 +75,7 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
                     if not specified_user:
                         await manually_game_sign.finish(f"⚠️未找到用户 {specified_user_id}", at_sender=True)
-                    await msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行游戏签到...")
+                    msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行游戏签到...")
                     await perform_game_sign(
                         bot=bot,
                         user=specified_user,
