@@ -278,7 +278,8 @@ async def perform_game_sign(
                         for i in range(3):
                             if matcher:
                                 msgs_list.append(f"⏳[验证码{i}] 正在尝试完成人机验证，请稍后...")
-                            geetest_result = await get_validate(user, mmt_data.gt, mmt_data.challenge)
+                            if not (geetest_result := await get_validate(user, mmt_data.gt, mmt_data.challenge)):
+                                continue # 如果没有获取到validate不进行签到，直接重试
                             sign_status, mmt_data = await signer.sign(account.platform, mmt_data, geetest_result)
                             if sign_status:
                                 break
