@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from ..api import BaseGameSign
 from ..api import BaseMission, get_missions_state
 from ..api.common import genshin_note, get_game_record, starrail_note
-from ..api.weibo import WeiboCode, WeiboSign
 from ..command.common import CommandRegistry
 from ..command.exchange import generate_image
 from ..model import (MissionStatus, PluginDataManager, plugin_config, UserData, CommandUsage, GenshinNoteNotice,
@@ -30,7 +29,7 @@ from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, Genera
 
 __all__ = [
     "manually_game_sign", "manually_bbs_sign", "manually_genshin_note_check",
-    "manually_starrail_note_check", "manually_weibo_code_check", "manually_weibo_sign_check"
+    "manually_starrail_note_check"
 ]
 
 manually_game_sign = on_command(plugin_config.preference.command_start + '签到', priority=5, block=True)
@@ -685,101 +684,6 @@ async def starrail_note_check(user: UserData, user_ids: Iterable[str], matcher: 
                     await send_private_msg(user_id=user_id, message=msg)
 
 
-manually_weibo_code_check = on_command(plugin_config.preference.command_start + 'wb兑换', priority=5, block=True)
-
-
-@manually_weibo_code_check.handle()
-async def weibo_code(event: Union[GeneralMessageEvent], matcher: Matcher):
-    if isinstance(event, GeneralGroupMessageEvent):
-        await matcher.send("⚠️为了保护您的隐私，请私聊进行查询。")
-    else:
-        user_id = event.get_user_id()
-        user = PluginDataManager.plugin_data.users.get(user_id)
-        await weibo_code_check(user=user, user_ids=[user_id], matcher=matcher)
-
-
-manually_weibo_sign_check = on_command(plugin_config.preference.command_start + 'wb签到', priority=5, block=True)
-
-
-@manually_weibo_sign_check.handle()
-async def weibo_sign(event: Union[GeneralMessageEvent], matcher: Matcher):
-    user_id = event.get_user_id()
-    user = PluginDataManager.plugin_data.users.get(user_id)
-    await weibo_sign_check(user=user, user_ids=[user_id], matcher=matcher)
-
-
-async def weibo_sign_check(user: UserData, user_ids: Iterable[str], matcher: Matcher = None):
-    """
-    :param user: 用户对象
-    :param user_ids: 发送通知的所有用户ID
-    :param matcher: nonebot ``Matcher``
-    """
-    if user.enable_weibo:
-        for user_data in user.weibo:
-            msg = await WeiboSign.sign(user_data)
-            if matcher:
-                await matcher.send(message=msg)
-            else:
-                for user_id in user_ids:
-                    await send_private_msg(user_id=user_id, message=msg)
-    else:
-        message = "未开启微博自动签到功能"
-        if matcher:
-            await matcher.send(message)
-
-
-async def weibo_code_check(user: UserData, user_ids: Iterable[str], mode=0, matcher: Matcher = None):
-    """
-    是否开启微博兑换码功能的函数，并发送给用户任务执行消息。
-
-    :param user: 用户对象
-    :param user_ids: 发送通知的所有用户ID
-    :param matcher: nonebot ``Matcher``
-    """
-
-    if user.enable_weibo:
-        # account = UserAccount(account) 
-        for user_data in user.weibo:
-            msg, img = None, None
-            start = True
-            weibo = WeiboCode(user_data)
-            ticket_id = await weibo.get_ticket_id
-            if mode == 1:
-                if isinstance(ticket_id, dict):
-                    await weibo_sign_check(user=user, user_ids=user_ids)
-                else:
-                    start = False
-            if start:
-                try:
-                    for key, value in ticket_id.items():
-                        one_id = {key: value}
-                        result = await weibo.get_code_list(one_id)
-                        if isinstance(result, tuple):
-                            msg, img = result
-                        else:
-                            msg = result
-                        if matcher:
-                            if img:
-                                onebot_img_msg = OneBotV11MessageSegment.image(await get_file(img))
-                                messages = msg + onebot_img_msg
-                            else:
-                                messages = msg
-                            await matcher.send(messages)
-                        else:
-                            if img and '无' not in msg:
-                                saa_img = Image(await get_file(img))
-                                messages = msg + saa_img
-                                for user_id in user_ids:
-                                    logger.info(f"检测到当前超话有兑换码，正在给{user_id}推送信息中")
-                                    await send_private_msg(user_id=user_id, message=messages)
-                except Exception:
-                    pass
-    else:
-        message = "未开启微博兑换功能"
-        if matcher:
-            await matcher.send(message)
-
-
 async def send_qqGroup(bot, event, msgs_list):
     def build_forward_msg(msg):
         #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
@@ -827,19 +731,3 @@ async def auto_note_check():
         await genshin_note_check(user=user, user_ids=user_ids)
         await starrail_note_check(user=user, user_ids=user_ids)
     logger.info(f"{plugin_config.preference.log_head}自动便笺检查执行完成")
-
-
-@scheduler.scheduled_job("cron",
-                         hour=str(int(plugin_config.preference.plan_time.split(':')[0]) + 1),
-                         minute=plugin_config.preference.plan_time.split(':')[1],
-                         id="weibo_schedule")
-async def auto_weibo_check():
-    """
-    每日检查微博超话签到及兑换码函数
-    """
-    logger.info(f"{plugin_config.preference.log_head}开始执行微博自动任务")
-    for user_id, user in get_unique_users():
-        user_ids = [user_id] + list(get_all_bind(user_id))
-        # await weibo_sign_check(user=user, user_ids=user_ids)
-        await weibo_code_check(user=user, user_ids=user_ids, mode=1)
-    logger.info(f"{plugin_config.preference.log_head}微博自动任务执行完成")
