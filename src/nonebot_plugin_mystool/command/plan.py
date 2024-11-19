@@ -275,10 +275,14 @@ async def perform_game_sign(
                 sign_status, mmt_data = await signer.sign(account.platform)
                 if sign_status.need_verify:
                     if plugin_config.preference.geetest_url or user.geetest_url:
-                        if matcher:
-                            msgs_list.append("⏳正在尝试完成人机验证，请稍后...")
-                        geetest_result = await get_validate(user, mmt_data.gt, mmt_data.challenge)
-                        sign_status, _ = await signer.sign(account.platform, mmt_data, geetest_result)
+                        for i in range(3):
+                            if matcher:
+                                msgs_list.append(f"⏳[验证码{i}] 正在尝试完成人机验证，请稍后...")
+                            if not (geetest_result := await get_validate(user, mmt_data.gt, mmt_data.challenge)):
+                                continue # 如果没有获取到validate不进行签到，直接重试
+                            sign_status, mmt_data = await signer.sign(account.platform, mmt_data, geetest_result)
+                            if sign_status:
+                                break
 
                 if not sign_status and (user.enable_notice or matcher):
                     if sign_status.login_expired:
