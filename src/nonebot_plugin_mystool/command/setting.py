@@ -7,7 +7,7 @@ from nonebot.params import T_State
 
 from ..api import BaseMission, BaseGameSign
 from ..command.common import CommandRegistry
-from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage, UserData
+from ..model import PluginDataManager, plugin_config, UserAccount, CommandUsage
 from ..utils import COMMAND_BEGIN, GeneralMessageEvent
 
 __all__ = ["setting", "account_setting", "global_setting"]

@@ -5,7 +5,7 @@ from typing import Union, Optional, Iterable, Dict
 from nonebot import on_command, get_adapters, get_bot
 from nonebot.adapters.onebot.v11 import MessageSegment as OneBotV11MessageSegment, Adapter as OneBotV11Adapter, \
     MessageEvent as OneBotV11MessageEvent, GroupMessageEvent as OneBotV11GroupMessageEvent, \
-    PrivateMessageEvent as OneBotV11PrivateMessageEvent, Bot
+    Bot
 from nonebot.adapters.qq import MessageSegment as QQGuildMessageSegment, Adapter as QQGuildAdapter, \
     MessageEvent as QQGuildMessageEvent
 from nonebot.adapters.qq.exception import AuditException
@@ -23,8 +23,7 @@ from ..command.common import CommandRegistry
 from ..command.exchange import generate_image
 from ..model import (MissionStatus, PluginDataManager, plugin_config, UserData, CommandUsage, GenshinNoteNotice,
                      StarRailNoteNotice)
-from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, GeneralGroupMessageEvent, \
-    send_private_msg, get_all_bind, \
+from ..utils import get_file, logger, COMMAND_BEGIN, GeneralMessageEvent, send_private_msg, get_all_bind, \
     get_unique_users, get_validate, read_admin_list
 
 __all__ = [
@@ -86,7 +85,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     )
     else:
         msgs_list.append("⏳开始游戏签到...")
-        await perform_game_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event, msgs_list=msgs_list)
+        await perform_game_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event,
+                                msgs_list=msgs_list)
 
 
 manually_bbs_sign = on_command(plugin_config.preference.command_start + '任务', priority=5, block=True)
@@ -143,7 +143,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                     )
     else:
         msgs_list.append("⏳开始执行米游币任务...")
-        await perform_bbs_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event, msgs_list=msgs_list)
+        await perform_bbs_sign(bot=bot, user=user, user_ids=[user_id], matcher=matcher, event=event,
+                               msgs_list=msgs_list)
 
 
 class NoteNoticeStatus(BaseModel):
@@ -224,9 +225,9 @@ async def perform_game_sign(
         user: UserData,
         user_ids: Iterable[str],
         matcher: Matcher = None,
-        bot: Optional[Bot] = None ,
-        event: Union[GeneralMessageEvent] = None ,
-        msgs_list = None
+        bot: Optional[Bot] = None,
+        event: Union[GeneralMessageEvent] = None,
+        msgs_list=None
 ):
     """
     执行游戏签到函数，并发送给用户签到消息。
@@ -255,7 +256,7 @@ async def perform_game_sign(
                     )
             continue
         games_has_record = []
-        
+
         for class_type in BaseGameSign.available_game_signs:
             signer = class_type(account, records)
             if not signer.has_record:
@@ -286,7 +287,7 @@ async def perform_game_sign(
                             if matcher:
                                 msgs_list.append(f"⏳[验证码{i}] 正在尝试完成人机验证，请稍后...")
                             if not (geetest_result := await get_validate(user, mmt_data.gt, mmt_data.challenge)):
-                                continue # 如果没有获取到validate不进行签到，直接重试
+                                continue  # 如果没有获取到validate不进行签到，直接重试
                             sign_status, mmt_data = await signer.sign(account.platform, mmt_data, geetest_result)
                             if sign_status:
                                 break
@@ -353,9 +354,9 @@ async def perform_game_sign(
                                 await send_private_msg(use=adapter, user_id=user_id, message=msg)
                                 await send_private_msg(use=adapter, user_id=user_id, message=qq_guild_img_msg)
             await asyncio.sleep(plugin_config.preference.sleep_time)
-        
+
         if msgs_list:
-            if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+            if isinstance(event, OneBotV11GroupMessageEvent):  # 在群聊触发游戏签到将使用合并消息
                 await send_qqGroup(bot, event, msgs_list)
             else:
                 for msg in msgs_list:
@@ -378,12 +379,12 @@ async def perform_game_sign(
 
 
 async def perform_bbs_sign(
-        user: UserData, 
-        user_ids: Iterable[str], 
-        matcher: Matcher = None, 
-        bot: Optional[Bot] = None ,
-        event: Union[GeneralMessageEvent] = None ,
-        msgs_list = None):
+        user: UserData,
+        user_ids: Iterable[str],
+        matcher: Matcher = None,
+        bot: Optional[Bot] = None,
+        event: Union[GeneralMessageEvent] = None,
+        msgs_list=None):
     """
     执行米游币任务函数，并发送给用户任务执行消息。
 
@@ -409,7 +410,8 @@ async def perform_bbs_sign(
                             message=f'⚠️账户 {account.display_name} 登录失效，请重新登录'
                         )
             if matcher:
-                await matcher.send(f'⚠️账户 {account.display_name} 获取任务完成情况请求失败，你可以手动前往App查看', at_sender=True)
+                await matcher.send(f'⚠️账户 {account.display_name} 获取任务完成情况请求失败，你可以手动前往App查看',
+                                   at_sender=True)
             else:
                 for user_id in user_ids:
                     await send_private_msg(
@@ -514,9 +516,9 @@ async def perform_bbs_sign(
             else:
                 for user_id in user_ids:
                     await send_private_msg(user_id=user_id, message=msg)
-        
+
         if msgs_list:
-            if isinstance(event, OneBotV11GroupMessageEvent):   #在群聊触发游戏签到将使用合并消息
+            if isinstance(event, OneBotV11GroupMessageEvent):  # 在群聊触发游戏签到将使用合并消息
                 await send_qqGroup(bot, event, msgs_list)
             else:
                 for msg in msgs_list:
@@ -694,10 +696,12 @@ async def starrail_note_check(user: UserData, user_ids: Iterable[str], matcher: 
 
 async def send_qqGroup(bot, event, msgs_list):
     def build_forward_msg(msg):
-        #受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
-        return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}  
+        # 受限于LLOnebot，合并转发消息只能使用bot的身份无法自定义
+        return {"type": "node", "data": {"nickname": "流萤", "user_id": "114514", "content": msg}}
+
     messages = [build_forward_msg(msg) for msg in msgs_list]
-    await bot.call_api("send_group_msg", group_id=event.group_id, message={"type": "at","data": {"qq": str(event.user_id)}})
+    await bot.call_api("send_group_msg", group_id=event.group_id,
+                       message={"type": "at", "data": {"qq": str(event.user_id)}})
     await bot.call_api("send_group_forward_msg", group_id=event.group_id, messages=messages)
 
 
