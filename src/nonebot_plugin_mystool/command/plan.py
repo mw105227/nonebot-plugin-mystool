@@ -68,7 +68,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                             user=user_,
                             user_ids=[],
                             matcher=matcher,
-                            event=event
+                            event=event,
+                            msgs_list=msgs_list
                         )
                 else:
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
@@ -80,7 +81,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                         user=specified_user,
                         user_ids=[],
                         matcher=matcher,
-                        event=event
+                        event=event,
+                        msgs_list=msgs_list
                     )
     else:
         msgs_list.append("⏳开始游戏签到...")
@@ -115,23 +117,29 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                 await manually_bbs_sign.finish("⚠️你暂无权限执行此操作，只有管理员名单中的用户可以执行此操作")
             else:
                 if specified_user_id == "*":
-                    await msgs_list.append("⏳开始为所有用户执行米游币任务...")
+                    msgs_list.append("⏳开始为所有用户执行米游币任务...")
                     for user_id_, user_ in get_unique_users():
                         await msgs_list.append(f"⏳开始为用户 {user_id_} 执行米游币任务...")
                         await perform_bbs_sign(
+                            bot=bot,
                             user=user_,
                             user_ids=[],
-                            matcher=matcher
+                            matcher=matcher,
+                            event=event,
+                            msgs_list=msgs_list
                         )
                 else:
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
                     if not specified_user:
                         await manually_bbs_sign.finish(f"⚠️未找到用户 {specified_user_id}")
-                    await msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行米游币任务...")
+                    msgs_list.append(f"⏳开始为用户 {specified_user_id} 执行米游币任务...")
                     await perform_bbs_sign(
+                        bot=bot,
                         user=specified_user,
                         user_ids=[],
-                        matcher=matcher
+                        matcher=matcher,
+                        event=event,
+                        msgs_list=msgs_list
                     )
     else:
         msgs_list.append("⏳开始执行米游币任务...")
