@@ -68,7 +68,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                             user=user_,
                             user_ids=[],
                             matcher=matcher,
-                            event=event
+                            event=event,
+                            msgs_list=msgs_list
                         )
                 else:
                     specified_user = PluginDataManager.plugin_data.users.get(specified_user_id)
@@ -80,7 +81,8 @@ async def _(event: Union[GeneralMessageEvent], matcher: Matcher, command_arg=Com
                         user=specified_user,
                         user_ids=[],
                         matcher=matcher,
-                        event=event
+                        event=event,
+                        msgs_list=msgs_list
                     )
     else:
         msgs_list.append("⏳开始游戏签到...")
