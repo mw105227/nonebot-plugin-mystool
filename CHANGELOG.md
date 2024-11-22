@@ -5,10 +5,11 @@
 [//]: # (#### 💡 新特性)
 
 #### 🐛 修复
-- 修复错误的人机验证重试流程 (#377) - by @Night-stars-1
-  - 极验的 `challenge` 只能使用一次，因此在 `get_validate` 进行错误重试是没有意义的
+- 修复为全部用户执行游戏签到和米游社任务的 **`/签到 *`** 和 **`/任务 *`** 命令 (#364) (#384, @dontdot)
 
-[//]: # (#### 🔧 杂项)
+#### 🔧 杂项
+- 已**移除微博签到**相关功能 (#383, @dontdot)
+- [Wiki 文档](https://github.com/Ljzd-PRO/nonebot-plugin-mystool/wiki) 已更新
 
 ### 更新方式
 
@@ -30,4 +31,4 @@
 - V1 (`>=v1.0.0, <v2.0.0`) 插件配置/数据文件为 _`plugin_data.json`_
 - `<v1.0.0` 插件配置文件为 _`pluginConfig.json`_
 
-**Full Changelog**: https://github.com/Ljzd-PRO/nonebot-plugin-mystool/compare/v2.8.0…v2.8.1
+**Full Changelog**: https://github.com/Ljzd-PRO/nonebot-plugin-mystool/compare/v2.8.1…v2.9.0
